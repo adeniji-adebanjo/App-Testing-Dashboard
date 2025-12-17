@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import MetricsDashboard from '@/components/testing/MetricsDashboard';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import MetricsDashboard from "@/components/testing/MetricsDashboard";
 
 export default function MetricsPage() {
   return (
@@ -28,31 +28,38 @@ export default function MetricsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h4 className="font-semibold text-sm mb-2">Reduction in Duplicate Spooling</h4>
+            <h4 className="font-semibold text-sm mb-2">
+              Reduction in Duplicate Spooling
+            </h4>
             <p className="text-sm text-gray-600">
-              Compare the number of duplicate requests before and after implementation. 
-              Calculate the percentage reduction. Target: ≥90% reduction.
+              Compare the number of duplicate requests before and after
+              implementation. Calculate the percentage reduction. Target: ≥90%
+              reduction.
             </p>
           </div>
           <div>
-            <h4 className="font-semibold text-sm mb-2">API-Based Spooling Transition</h4>
+            <h4 className="font-semibold text-sm mb-2">
+              API-Based Spooling Transition
+            </h4>
             <p className="text-sm text-gray-600">
-              Measure the percentage of reports pulled via API vs manual methods. 
-              Target: 100% API-based once integration is complete.
+              Measure the percentage of reports pulled via API vs manual
+              methods. Target: 100% API-based once integration is complete.
             </p>
           </div>
           <div>
             <h4 className="font-semibold text-sm mb-2">User Satisfaction</h4>
             <p className="text-sm text-gray-600">
-              Conduct user surveys with underwriting and operations teams. 
+              Conduct user surveys with underwriting and operations teams.
               Target: ≥80% positive satisfaction rating.
             </p>
           </div>
           <div>
-            <h4 className="font-semibold text-sm mb-2">Report Retrieval Time</h4>
+            <h4 className="font-semibold text-sm mb-2">
+              Report Retrieval Time
+            </h4>
             <p className="text-sm text-gray-600">
-              Measure the average time from request initiation to report availability. 
-              Target: <2 seconds for API-based requests.
+              Measure the average time from request initiation to report
+              availability. Target: `&lt;` 2 seconds for API-based requests.
             </p>
           </div>
         </CardContent>
