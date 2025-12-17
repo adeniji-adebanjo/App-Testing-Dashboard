@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { TestObjective } from "@/types/test-case";
+import {
+  saveObjectives,
+  loadObjectives,
+  saveQualityGates,
+  loadQualityGates,
+} from "@/lib/storage";
 
 const initialObjectives: TestObjective[] = [
   {
@@ -69,6 +75,30 @@ export default function ObjectivesChecklist() {
   const [objectives, setObjectives] =
     useState<TestObjective[]>(initialObjectives);
   const [gates, setGates] = useState<TestObjective[]>(qualityGates);
+
+  useEffect(() => {
+    const loadedObjectives = loadObjectives();
+    const loadedGates = loadQualityGates();
+
+    if (loadedObjectives.length > 0) {
+      setObjectives(loadedObjectives);
+    }
+    if (loadedGates.length > 0) {
+      setGates(loadedGates);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (objectives.some((o) => o.completed)) {
+      saveObjectives(objectives);
+    }
+  }, [objectives]);
+
+  useEffect(() => {
+    if (gates.some((g) => g.completed)) {
+      saveQualityGates(gates);
+    }
+  }, [gates]);
 
   const toggleObjective = (id: string) => {
     setObjectives((prev) =>

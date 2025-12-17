@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TestEnvironment } from "@/types/test-case";
+import { saveEnvironments, loadEnvironments } from "@/lib/storage";
 
 const initialEnvironments: TestEnvironment[] = [
   {
@@ -25,6 +27,19 @@ const initialEnvironments: TestEnvironment[] = [
 export default function TestEnvironmentSetup() {
   const [environments, setEnvironments] =
     useState<TestEnvironment[]>(initialEnvironments);
+
+  useEffect(() => {
+    const loaded = loadEnvironments();
+    if (loaded.length > 0) {
+      setEnvironments(loaded);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (environments.some((e) => e.status === "ready")) {
+      saveEnvironments(environments);
+    }
+  }, [environments]);
 
   const toggleStatus = (index: number) => {
     setEnvironments((prev) =>
