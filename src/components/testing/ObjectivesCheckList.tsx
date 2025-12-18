@@ -72,21 +72,18 @@ const qualityGates: TestObjective[] = [
 ];
 
 export default function ObjectivesChecklist() {
-  const [objectives, setObjectives] =
-    useState<TestObjective[]>(initialObjectives);
-  const [gates, setGates] = useState<TestObjective[]>(qualityGates);
-
-  useEffect(() => {
-    const loadedObjectives = loadObjectives();
-    const loadedGates = loadQualityGates();
-
-    if (loadedObjectives.length > 0) {
-      setObjectives(loadedObjectives);
+  const [objectives, setObjectives] = useState<TestObjective[]>(
+    () => {
+      const loaded = loadObjectives();
+      return loaded.length > 0 ? loaded : initialObjectives;
     }
-    if (loadedGates.length > 0) {
-      setGates(loadedGates);
+  );
+  const [gates, setGates] = useState<TestObjective[]>(
+    () => {
+      const loaded = loadQualityGates();
+      return loaded.length > 0 ? loaded : qualityGates;
     }
-  }, []);
+  );
 
   useEffect(() => {
     if (objectives.some((o) => o.completed)) {
