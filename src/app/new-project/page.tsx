@@ -3,24 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useProject } from "@/context/ProjectContext";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   ChevronRight,
   ChevronLeft,
@@ -154,7 +141,7 @@ export default function NewProjectPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary/5 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-primary/5 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8 animate-in slide-in-from-bottom-4 duration-500">

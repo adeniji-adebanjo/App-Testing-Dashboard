@@ -37,6 +37,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Project } from "@/types/project";
+import { PRDUploader } from "@/components/project/PRDUploader";
 
 const PROJECT_COLORS = [
   "#6366F1", // Indigo
@@ -458,18 +459,7 @@ export default function ProjectSettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-                <Upload size={32} className="mx-auto text-gray-300 mb-3" />
-                <p className="text-sm font-medium text-gray-500">
-                  Drop PRD file here
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  PDF, DOCX, or Markdown
-                </p>
-              </div>
-              <p className="text-[10px] text-gray-400 mt-3 text-center italic">
-                Coming Soon - AI-powered test case generation
-              </p>
+              <PRDUploader projectId={currentProject.id} />
             </CardContent>
           </Card>
 
