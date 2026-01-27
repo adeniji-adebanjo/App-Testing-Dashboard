@@ -25,7 +25,15 @@ export default function Header() {
   };
 
   const handleExport = () => {
-    exportSummaryReport();
+    // Generate a simple generic summary for the global header export
+    const genericSummary = `TESTING PORTAL SUMMARY REPORT
+Generated: ${new Date().toLocaleString()}
+====================================
+
+This is a quick export from the main portal header.
+For detailed project-specific reports, navigate to the project's Reports page.
+`;
+    exportSummaryReport(genericSummary, "testing-portal");
   };
 
   return (

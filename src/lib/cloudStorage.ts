@@ -81,13 +81,21 @@ const getUserId = async (): Promise<string | null> => {
   }
 };
 
+// Helper to get project-specific key
+const getProjectKey = (key: string, projectId?: string) => {
+  return projectId ? `${projectId}_${key}` : key;
+};
+
 // Save to cloud
 export const saveToCloud = async <T>(
   key: string,
   data: T,
+  projectId?: string,
 ): Promise<boolean> => {
+  const storageKey = getProjectKey(key, projectId);
+
   // Always save to localStorage as backup
-  localSave(key, data);
+  localSave(storageKey, data);
 
   if (!isSupabaseEnabled()) {
     return true; // Fallback success
@@ -102,7 +110,7 @@ export const saveToCloud = async <T>(
       .from("test_data")
       .select("id")
       .eq("user_id", userId)
-      .eq("data_type", key)
+      .eq("data_type", storageKey)
       .single();
 
     if (existing) {
@@ -118,7 +126,7 @@ export const saveToCloud = async <T>(
       const { error } = await supabase!.from("test_data").insert([
         {
           user_id: userId,
-          data_type: key,
+          data_type: storageKey,
           data: data as unknown,
         },
       ]);
@@ -137,32 +145,35 @@ export const saveToCloud = async <T>(
 export const loadFromCloud = async <T>(
   key: string,
   defaultValue: T,
+  projectId?: string,
 ): Promise<T> => {
+  const storageKey = getProjectKey(key, projectId);
+
   if (!isSupabaseEnabled()) {
-    return localLoad(key, defaultValue);
+    return localLoad(storageKey, defaultValue);
   }
 
   try {
     const userId = await getUserId();
-    if (!userId) return localLoad(key, defaultValue);
+    if (!userId) return localLoad(storageKey, defaultValue);
 
     const { data, error } = await supabase!
       .from("test_data")
       .select("data")
       .eq("user_id", userId)
-      .eq("data_type", key)
+      .eq("data_type", storageKey)
       .single();
 
     if (error || !data) {
-      return localLoad(key, defaultValue);
+      return localLoad(storageKey, defaultValue);
     }
 
     // Also save to localStorage for offline access
-    localSave(key, data.data);
+    localSave(storageKey, data.data);
     return data.data as T;
   } catch (error) {
     console.error("Error loading from cloud:", error);
-    return localLoad(key, defaultValue);
+    return localLoad(storageKey, defaultValue);
   }
 };
 
@@ -196,68 +207,97 @@ export const syncFromCloud = async (): Promise<boolean> => {
 // Export specific save functions
 export const saveTestCases = async (
   testCases: TestCase[],
+  projectId?: string,
 ): Promise<boolean> => {
-  return saveToCloud(STORAGE_KEYS.TEST_CASES, testCases);
+  return saveToCloud(STORAGE_KEYS.TEST_CASES, testCases, projectId);
 };
 
-export const loadTestCases = async (): Promise<TestCase[]> => {
-  return loadFromCloud<TestCase[]>(STORAGE_KEYS.TEST_CASES, []);
+export const loadTestCases = async (
+  projectId?: string,
+): Promise<TestCase[]> => {
+  return loadFromCloud<TestCase[]>(STORAGE_KEYS.TEST_CASES, [], projectId);
 };
 
-export const saveDefects = async (defects: Defect[]): Promise<boolean> => {
-  return saveToCloud(STORAGE_KEYS.DEFECTS, defects);
+export const saveDefects = async (
+  defects: Defect[],
+  projectId?: string,
+): Promise<boolean> => {
+  return saveToCloud(STORAGE_KEYS.DEFECTS, defects, projectId);
 };
 
-export const loadDefects = async (): Promise<Defect[]> => {
-  return loadFromCloud<Defect[]>(STORAGE_KEYS.DEFECTS, []);
+export const loadDefects = async (projectId?: string): Promise<Defect[]> => {
+  return loadFromCloud<Defect[]>(STORAGE_KEYS.DEFECTS, [], projectId);
 };
 
 export const saveMetrics = async (
   metrics: SuccessMetric[],
+  projectId?: string,
 ): Promise<boolean> => {
-  return saveToCloud(STORAGE_KEYS.METRICS, metrics);
+  return saveToCloud(STORAGE_KEYS.METRICS, metrics, projectId);
 };
 
-export const loadMetrics = async (): Promise<SuccessMetric[]> => {
-  return loadFromCloud<SuccessMetric[]>(STORAGE_KEYS.METRICS, []);
+export const loadMetrics = async (
+  projectId?: string,
+): Promise<SuccessMetric[]> => {
+  return loadFromCloud<SuccessMetric[]>(STORAGE_KEYS.METRICS, [], projectId);
 };
 
 export const saveObjectives = async (
   objectives: TestObjective[],
+  projectId?: string,
 ): Promise<boolean> => {
-  return saveToCloud(STORAGE_KEYS.OBJECTIVES, objectives);
+  return saveToCloud(STORAGE_KEYS.OBJECTIVES, objectives, projectId);
 };
 
-export const loadObjectives = async (): Promise<TestObjective[]> => {
-  return loadFromCloud<TestObjective[]>(STORAGE_KEYS.OBJECTIVES, []);
+export const loadObjectives = async (
+  projectId?: string,
+): Promise<TestObjective[]> => {
+  return loadFromCloud<TestObjective[]>(STORAGE_KEYS.OBJECTIVES, [], projectId);
 };
 
 export const saveQualityGates = async (
   gates: TestObjective[],
+  projectId?: string,
 ): Promise<boolean> => {
-  return saveToCloud(STORAGE_KEYS.QUALITY_GATES, gates);
+  return saveToCloud(STORAGE_KEYS.QUALITY_GATES, gates, projectId);
 };
 
-export const loadQualityGates = async (): Promise<TestObjective[]> => {
-  return loadFromCloud<TestObjective[]>(STORAGE_KEYS.QUALITY_GATES, []);
+export const loadQualityGates = async (
+  projectId?: string,
+): Promise<TestObjective[]> => {
+  return loadFromCloud<TestObjective[]>(
+    STORAGE_KEYS.QUALITY_GATES,
+    [],
+    projectId,
+  );
 };
 
 export const saveEnvironments = async (
   environments: TestEnvironment[],
+  projectId?: string,
 ): Promise<boolean> => {
-  return saveToCloud(STORAGE_KEYS.ENVIRONMENTS, environments);
+  return saveToCloud(STORAGE_KEYS.ENVIRONMENTS, environments, projectId);
 };
 
-export const loadEnvironments = async (): Promise<TestEnvironment[]> => {
-  return loadFromCloud<TestEnvironment[]>(STORAGE_KEYS.ENVIRONMENTS, []);
+export const loadEnvironments = async (
+  projectId?: string,
+): Promise<TestEnvironment[]> => {
+  return loadFromCloud<TestEnvironment[]>(
+    STORAGE_KEYS.ENVIRONMENTS,
+    [],
+    projectId,
+  );
 };
 
-export const saveSignOffs = async (signOffs: SignOff[]): Promise<boolean> => {
-  return saveToCloud(STORAGE_KEYS.SIGN_OFFS, signOffs);
+export const saveSignOffs = async (
+  signOffs: SignOff[],
+  projectId?: string,
+): Promise<boolean> => {
+  return saveToCloud(STORAGE_KEYS.SIGN_OFFS, signOffs, projectId);
 };
 
-export const loadSignOffs = async (): Promise<SignOff[]> => {
-  return loadFromCloud<SignOff[]>(STORAGE_KEYS.SIGN_OFFS, []);
+export const loadSignOffs = async (projectId?: string): Promise<SignOff[]> => {
+  return loadFromCloud<SignOff[]>(STORAGE_KEYS.SIGN_OFFS, [], projectId);
 };
 
 export const getLastUpdated = (): string | null => {

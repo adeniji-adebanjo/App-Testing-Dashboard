@@ -8,6 +8,8 @@ export type ProjectPhase =
   | "uat"
   | "completed";
 
+import { TestObjective, TestEnvironment } from "./test-case";
+
 export interface Project {
   id: string;
   name: string;
@@ -20,6 +22,8 @@ export interface Project {
   phase: ProjectPhase;
   color: string; // Theme color for the project (hex or tailwind color)
   icon?: string; // Optional icon identifier
+  objectives?: TestObjective[];
+  environments?: TestEnvironment[];
   createdAt: Date;
   updatedAt: Date;
 }

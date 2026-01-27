@@ -1,14 +1,18 @@
-import { exportAllData } from "./storage";
+import {
+  TestCase,
+  Defect,
+  SuccessMetric,
+  TestObjective,
+} from "@/types/test-case";
 
 // Export as JSON
-export const exportAsJSON = (): void => {
-  const data = exportAllData();
+export const exportAsJSON = (data: any, fileName?: string): void => {
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `credit-bureau-testing-${
+  link.download = `${fileName || "testing-data"}-${
     new Date().toISOString().split("T")[0]
   }.json`;
   document.body.appendChild(link);
@@ -18,10 +22,7 @@ export const exportAsJSON = (): void => {
 };
 
 // Export as CSV (for test cases)
-export const exportTestCasesAsCSV = (): void => {
-  const data = exportAllData();
-  const testCases = data.testCases;
-
+export const exportTestCasesAsCSV = (testCases: TestCase[]): void => {
   if (!testCases || testCases.length === 0) {
     alert("No test cases to export");
     return;
@@ -41,14 +42,16 @@ export const exportTestCasesAsCSV = (): void => {
     tc.module,
     tc.scenario,
     tc.expectedResult,
-    tc.actualResult,
+    tc.actualResult || "",
     tc.status,
-    tc.comments,
+    tc.comments || "",
   ]);
 
   const csvContent = [
     headers.join(","),
-    ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+    ...rows.map((row) =>
+      row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
+    ),
   ].join("\n");
 
   const blob = new Blob([csvContent], { type: "text/csv" });
@@ -63,10 +66,7 @@ export const exportTestCasesAsCSV = (): void => {
 };
 
 // Export defects as CSV
-export const exportDefectsAsCSV = (): void => {
-  const data = exportAllData();
-  const defects = data.defects;
-
+export const exportDefectsAsCSV = (defects: Defect[]): void => {
   if (!defects || defects.length === 0) {
     alert("No defects to export");
     return;
@@ -86,14 +86,16 @@ export const exportDefectsAsCSV = (): void => {
     d.severity,
     d.module,
     d.description,
-    d.stepsToReproduce,
+    d.stepsToReproduce || "",
     d.status,
-    d.assignedTo,
+    d.assignedTo || "",
   ]);
 
   const csvContent = [
     headers.join(","),
-    ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+    ...rows.map((row) =>
+      row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
+    ),
   ].join("\n");
 
   const blob = new Blob([csvContent], { type: "text/csv" });
@@ -107,21 +109,21 @@ export const exportDefectsAsCSV = (): void => {
   URL.revokeObjectURL(url);
 };
 
-// Generate summary report
-export const generateSummaryReport = (): string => {
-  const data = exportAllData();
-  const testCases = data.testCases || [];
-  const defects = data.defects || [];
-  const metrics = data.metrics || [];
-  const objectives = data.objectives || [];
-
+// Generate summary report string
+export const generateSummaryReport = (
+  testCases: TestCase[] = [],
+  defects: Defect[] = [],
+  metrics: SuccessMetric[] = [],
+  objectives: TestObjective[] = [],
+  projectName: string = "CREDIT BUREAU TESTING",
+): string => {
   const passedTests = testCases.filter((tc) => tc.status === "pass").length;
   const failedTests = testCases.filter((tc) => tc.status === "fail").length;
   const pendingTests = testCases.filter((tc) => tc.status === "pending").length;
   const blockedTests = testCases.filter((tc) => tc.status === "blocked").length;
 
   const criticalDefects = defects.filter(
-    (d) => d.severity === "critical"
+    (d) => d.severity === "critical",
   ).length;
   const highDefects = defects.filter((d) => d.severity === "high").length;
   const openDefects = defects.filter((d) => d.status === "open").length;
@@ -133,7 +135,7 @@ export const generateSummaryReport = (): string => {
       : "0";
 
   return `
-CREDIT BUREAU TESTING SUMMARY REPORT
+${projectName.toUpperCase()} SUMMARY REPORT
 Generated: ${new Date().toLocaleString()}
 ====================================
 
@@ -164,18 +166,20 @@ Progress: ${
 
 SUCCESS METRICS
 ---------------
-${metrics.map((m) => `${m.metric}: ${m.status.toUpperCase()}`).join("\n")}
+${metrics.map((m) => `${m.metric}: ${m.status.toUpperCase()}`).join("\n") || "No metrics defined"}
 `;
 };
 
 // Export summary report as text file
-export const exportSummaryReport = (): void => {
-  const report = generateSummaryReport();
-  const blob = new Blob([report], { type: "text/plain" });
+export const exportSummaryReport = (
+  reportText: string,
+  projectName: string = "testing",
+): void => {
+  const blob = new Blob([reportText], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `testing-summary-${
+  link.download = `${projectName.toLowerCase()}-summary-${
     new Date().toISOString().split("T")[0]
   }.txt`;
   document.body.appendChild(link);

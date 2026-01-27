@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   Home,
@@ -11,46 +11,71 @@ import {
   BarChart3,
   FileText,
   X,
+  LayoutGrid,
+  ChevronRight,
 } from "lucide-react";
+import ProjectSwitcher from "@/components/project/ProjectSwitcher";
+import { useProject } from "@/context/ProjectContext";
 
-const navigation = [
-  { name: "Overview", href: "/", icon: Home },
-  {
-    name: "Functional Testing",
-    href: "/functional-testing",
-    icon: ClipboardList,
-  },
-  {
-    name: "Non-Functional Testing",
-    href: "/non-functional-testing",
-    icon: Activity,
-  },
-  { name: "Defect Tracking", href: "/defects", icon: Bug },
-  { name: "Success Metrics", href: "/metrics", icon: BarChart3 },
-  { name: "Reports & Export", href: "/reports", icon: FileText },
-];
-
-interface SidebarProps {
-  onClose?: () => void;
-}
-
-export default function Sidebar({ onClose }: SidebarProps) {
+export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
+  const { projectId } = useParams();
+  const { currentProject } = useProject();
+
+  const getNavItems = () => {
+    if (!projectId) {
+      return [{ name: "Project Hub", href: "/", icon: LayoutGrid }];
+    }
+
+    const base = `/projects/${projectId}`;
+    return [
+      { name: "Overview", href: base, icon: Home },
+      {
+        name: "Functional Testing",
+        href: `${base}/functional-testing`,
+        icon: ClipboardList,
+      },
+      {
+        name: "Non-Functional Testing",
+        href: `${base}/non-functional-testing`,
+        icon: Activity,
+      },
+      { name: "Defect Tracking", href: `${base}/defects`, icon: Bug },
+      { name: "Success Metrics", href: `${base}/metrics`, icon: BarChart3 },
+      { name: "Reports & Export", href: `${base}/reports`, icon: FileText },
+    ];
+  };
+
+  const navigation = getNavItems();
 
   return (
-    <div className="flex h-screen w-64 flex-col bg-gray-900 text-white">
-      <div className="flex h-16 items-center justify-between border-b border-gray-800 px-4">
-        <h1 className="text-lg font-bold sm:text-xl">Testing Dashboard</h1>
+    <div className="flex h-screen w-64 flex-col bg-gray-900 text-white shadow-2xl">
+      <div className="flex h-16 items-center justify-between border-b border-gray-800 px-6">
+        <h1 className="text-xl font-black tracking-tighter text-white uppercase italic">
+          Test<span className="text-primary not-italic">Portal</span>
+        </h1>
         {onClose && (
           <button
             onClick={onClose}
-            className="rounded-md p-1 hover:bg-gray-800 lg:hidden"
+            className="rounded-md p-1 hover:bg-gray-800 lg:hidden text-gray-400"
           >
             <X className="h-5 w-5" />
           </button>
         )}
       </div>
-      <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
+
+      <div className="px-4 py-6">
+        <ProjectSwitcher />
+      </div>
+
+      <div className="px-4 mb-2">
+        <div className="h-px bg-gray-800 w-full" />
+      </div>
+
+      <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-4">
+        <p className="text-[10px] font-bold uppercase text-gray-500 px-2 mb-2 tracking-wider">
+          {projectId ? "Project Navigation" : "Main Menu"}
+        </p>
         {navigation.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -59,27 +84,48 @@ export default function Sidebar({ onClose }: SidebarProps) {
               href={item.href}
               onClick={onClose}
               className={cn(
-                "group flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                "group flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "bg-gray-800 text-white"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  ? "bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(var(--primary),0.1)]"
+                  : "text-gray-400 hover:bg-gray-800/50 hover:text-white",
               )}
             >
-              <item.icon
-                className={cn(
-                  "mr-3 h-5 w-5 flex-shrink-0",
-                  isActive
-                    ? "text-white"
-                    : "text-gray-400 group-hover:text-white"
-                )}
-              />
-              <span className="truncate">{item.name}</span>
+              <div className="flex items-center">
+                <item.icon
+                  className={cn(
+                    "mr-3 h-5 w-5 flex-shrink-0 transition-colors",
+                    isActive
+                      ? "text-primary"
+                      : "text-gray-500 group-hover:text-gray-300",
+                  )}
+                />
+                <span className="truncate">{item.name}</span>
+              </div>
+              {isActive && <ChevronRight size={14} className="opacity-50" />}
             </Link>
           );
         })}
       </nav>
-      <div className="border-t border-gray-800 p-4">
-        <p className="text-xs text-gray-400">Credit Bureau Testing v1.0</p>
+
+      <div className="border-t border-gray-800 p-6 bg-gray-900/50">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-linear-to-br from-primary to-blue-600 flex items-center justify-center text-[10px] font-bold">
+            AA
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-bold truncate">Adebanjo Adeniji</span>
+            <span className="text-[10px] text-gray-500 truncate">
+              Senior QA Engineer
+            </span>
+          </div>
+        </div>
+        <div className="mt-4 pt-4 border-t border-gray-800 flex justify-between items-center text-[10px] text-gray-500">
+          <span>v2.0.0</span>
+          <div className="flex items-center gap-1 text-green-500">
+            <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
+            <span>Cloud Synced</span>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { SuccessMetric } from "@/types/test-case";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,69 +12,60 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getStatusColor } from "@/lib/utils";
-import { saveMetrics, loadMetrics } from "@/lib/cloudStorage";
-import { CheckCircle2, XCircle, Clock } from "lucide-react";
-
-const defaultMetrics: SuccessMetric[] = [
-  {
-    id: "1",
-    metric: "Reduction in duplicate daily spooling",
-    target: "≥90%",
-    actualResult: "",
-    status: "pending",
-  },
-  {
-    id: "2",
-    metric: "API-based spooling transition",
-    target: "100%",
-    actualResult: "",
-    status: "pending",
-  },
-  {
-    id: "3",
-    metric: "User satisfaction",
-    target: "≥80%",
-    actualResult: "",
-    status: "pending",
-  },
-  {
-    id: "4",
-    metric: "Report retrieval time",
-    target: "<2 seconds",
-    actualResult: "",
-    status: "pending",
-  },
-];
+import { cn, getStatusColor } from "@/lib/utils";
+import { useMetrics, useUpdateMetrics } from "@/hooks/useTestData";
+import { useProject } from "@/context/ProjectContext";
+import { CheckCircle2, XCircle, Clock, Target, Edit2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 
 export default function MetricsDashboard() {
-  const [metrics, setMetrics] = useState<SuccessMetric[]>(defaultMetrics);
+  const { currentProject } = useProject();
+  const projectId = currentProject?.id || "";
+
+  const { data: savedMetrics, isLoading } = useMetrics(projectId);
+  const updateMutation = useUpdateMetrics(projectId);
+
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      const loaded = await loadMetrics();
-      if (loaded.length > 0) {
-        setMetrics(loaded);
-      }
-    };
-    load();
-  }, []);
-
-  useEffect(() => {
-    if (metrics.some((m) => m.actualResult || m.status !== "pending")) {
-      saveMetrics(metrics);
-    }
-  }, [metrics]);
+  const metrics = useMemo(() => {
+    if (savedMetrics && savedMetrics.length > 0) return savedMetrics;
+    // We don't have explicit metrics in seed data yet, so we'll use a default set
+    // In a real app, these would come from the Project definition
+    return [
+      {
+        id: "m1",
+        metric: "System Availability",
+        target: "99.9%",
+        actualResult: "",
+        status: "pending",
+      },
+      {
+        id: "m2",
+        metric: "Average Response Time",
+        target: "< 200ms",
+        actualResult: "",
+        status: "pending",
+      },
+      {
+        id: "m3",
+        metric: "User Adoption Rate",
+        target: "80%",
+        actualResult: "",
+        status: "pending",
+      },
+    ] as SuccessMetric[];
+  }, [savedMetrics]);
 
   const updateMetric = (
     id: string,
     field: keyof SuccessMetric,
-    value: string
+    value: string,
   ) => {
-    setMetrics(
-      metrics.map((m) => (m.id === id ? { ...m, [field]: value } : m))
+    const updated = metrics.map((m) =>
+      m.id === id ? { ...m, [field]: value, projectId } : m,
     );
+    updateMutation.mutate(updated);
   };
 
   const metStats = {
@@ -85,106 +76,140 @@ export default function MetricsDashboard() {
   };
 
   const achievementRate =
-    metrics.length > 0
-      ? ((metStats.met / metrics.length) * 100).toFixed(0)
-      : "0";
+    metrics.length > 0 ? (metStats.met / metrics.length) * 100 : 0;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4 shadow-sm p-6 rounded-xl bg-white/50">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-40 w-full" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Total Metrics</p>
-          <p className="mt-2 text-2xl font-bold">{metStats.total}</p>
-        </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Met</p>
-          <p className="mt-2 text-2xl font-bold text-green-600">
-            {metStats.met}
-          </p>
-        </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Not Met</p>
-          <p className="mt-2 text-2xl font-bold text-red-600">
-            {metStats.notMet}
-          </p>
-        </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Achievement Rate</p>
-          <p className="mt-2 text-2xl font-bold">{achievementRate}%</p>
-        </div>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Quick Stats Grid */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <CardStat
+          label="Total Metrics"
+          value={metStats.total}
+          icon={<Target size={16} />}
+        />
+        <CardStat
+          label="Success Rate"
+          value={`${achievementRate.toFixed(0)}%`}
+          icon={<CheckCircle2 size={16} />}
+          color="text-green-600"
+        />
+        <CardStat
+          label="Items Pending"
+          value={metStats.pending}
+          icon={<Clock size={16} />}
+          color="text-amber-500"
+        />
+        <CardStat
+          label="Not Met"
+          value={metStats.notMet}
+          icon={<XCircle size={16} />}
+          color="text-red-500"
+        />
       </div>
 
-      {/* Metrics Table */}
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full">
-          <thead className="border-b bg-muted">
+      {/* Metrics Detail Table */}
+      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white/70 backdrop-blur-md shadow-sm">
+        <table className="w-full text-left">
+          <thead className="bg-gray-50/50 border-b border-gray-100">
             <tr>
-              <th className="p-3 text-left text-sm font-semibold">
+              <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
                 Success Metric
               </th>
-              <th className="p-3 text-left text-sm font-semibold">Target</th>
-              <th className="p-3 text-left text-sm font-semibold">
-                Actual Result
+              <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Target
               </th>
-              <th className="p-3 text-left text-sm font-semibold">Status</th>
+              <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Actual Value
+              </th>
+              <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Approval
+              </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-50">
             {metrics.map((metric) => (
-              <tr key={metric.id} className="border-b hover:bg-muted/50">
-                <td className="p-3 text-sm font-medium">{metric.metric}</td>
-                <td className="p-3 text-sm">{metric.target}</td>
-                <td className="p-3">
+              <tr
+                key={metric.id}
+                className="group hover:bg-gray-50/30 transition-colors"
+              >
+                <td className="p-4">
+                  <span className="text-sm font-bold text-gray-900">
+                    {metric.metric}
+                  </span>
+                </td>
+                <td className="p-4">
+                  <Badge
+                    variant="outline"
+                    className="font-mono text-xs border-gray-100 bg-gray-50/50"
+                  >
+                    {metric.target}
+                  </Badge>
+                </td>
+                <td className="p-4">
                   {editingId === metric.id ? (
-                    <Input
-                      value={metric.actualResult}
-                      onChange={(e) =>
-                        updateMetric(metric.id, "actualResult", e.target.value)
-                      }
-                      onBlur={() => setEditingId(null)}
-                      autoFocus
-                      placeholder="Enter actual result..."
-                      className="max-w-xs"
-                    />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={metric.actualResult}
+                        onChange={(e) =>
+                          updateMetric(
+                            metric.id,
+                            "actualResult",
+                            e.target.value,
+                          )
+                        }
+                        onBlur={() => setEditingId(null)}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" && setEditingId(null)
+                        }
+                        autoFocus
+                        className="h-8 text-sm focus-visible:ring-primary"
+                      />
+                    </div>
                   ) : (
-                    <span
+                    <div
                       onClick={() => setEditingId(metric.id)}
-                      className="cursor-pointer text-sm hover:bg-gray-100 rounded px-2 py-1"
+                      className="group/val flex items-center justify-between cursor-text text-sm font-medium text-gray-600 bg-gray-50/30 hover:bg-gray-100/50 px-3 py-1.5 rounded-lg border border-transparent hover:border-gray-200 transition-all"
                     >
-                      {metric.actualResult || "Click to add..."}
-                    </span>
+                      <span>{metric.actualResult || "Log Result..."}</span>
+                      <Edit2
+                        size={12}
+                        className="text-gray-300 opacity-0 group-hover/val:opacity-100 transition-opacity"
+                      />
+                    </div>
                   )}
                 </td>
-                <td className="p-3">
+                <td className="p-4">
                   <Select
                     value={metric.status}
                     onValueChange={(value: SuccessMetric["status"]) =>
                       updateMetric(metric.id, "status", value)
                     }
                   >
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger
+                      className={cn(
+                        "h-8 w-32 border-none shadow-none text-xs font-bold uppercase tracking-tight",
+                        metric.status === "met"
+                          ? "bg-green-100 text-green-700"
+                          : metric.status === "not-met"
+                            ? "bg-red-50 text-red-600"
+                            : "bg-gray-100 text-gray-500",
+                      )}
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-3 w-3" />
-                          Pending
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="met">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="h-3 w-3" />
-                          Met
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="not-met">
-                        <div className="flex items-center gap-2">
-                          <XCircle className="h-3 w-3" />
-                          Not Met
-                        </div>
-                      </SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="met">Met</SelectItem>
+                      <SelectItem value="not-met">Not Met</SelectItem>
                     </SelectContent>
                   </Select>
                 </td>
@@ -194,36 +219,85 @@ export default function MetricsDashboard() {
         </table>
       </div>
 
-      {/* Progress Indicator */}
-      <div className="rounded-lg border bg-card p-6">
-        <h3 className="text-lg font-semibold mb-4">Overall Progress</h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Achievement Rate</span>
-            <span className="font-semibold">{achievementRate}%</span>
+      {/* Visual Roadmap Card */}
+      <div className="p-8 rounded-3xl bg-linear-to-br from-gray-900 to-gray-800 text-white shadow-xl shadow-gray-200/50 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -mr-20 -mt-20" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="space-y-2">
+            <h3 className="text-xl font-black">Overall Project Performance</h3>
+            <p className="text-gray-400 text-sm max-w-sm">
+              We've successfully validated {metStats.met} out of{" "}
+              {metrics.length} critical success criteria for{" "}
+              {currentProject?.name}.
+            </p>
           </div>
-          <div className="h-3 w-full rounded-full bg-gray-200">
-            <div
-              className="h-3 rounded-full bg-green-500 transition-all"
-              style={{ width: `${achievementRate}%` }}
-            />
-          </div>
-          <div className="flex gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <div className="h-3 w-3 rounded-full bg-green-500" />
-              Met: {metStats.met}
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="h-3 w-3 rounded-full bg-red-500" />
-              Not Met: {metStats.notMet}
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="h-3 w-3 rounded-full bg-yellow-500" />
-              Pending: {metStats.pending}
-            </span>
+          <div className="flex items-center gap-6">
+            <div className="relative w-24 h-24">
+              <svg className="w-full h-full" viewBox="0 0 100 100">
+                <circle
+                  className="text-gray-700"
+                  strokeWidth="8"
+                  stroke="currentColor"
+                  fill="transparent"
+                  r="40"
+                  cx="50"
+                  cy="50"
+                />
+                <circle
+                  className="text-primary transition-all duration-1000"
+                  strokeWidth="8"
+                  strokeDasharray={`${achievementRate * 2.51}, 251`}
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="transparent"
+                  r="40"
+                  cx="50"
+                  cy="50"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center font-black text-xl">
+                {achievementRate.toFixed(0)}%
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">
+                Master Status
+              </p>
+              <p className="text-lg font-bold">
+                {achievementRate >= 80
+                  ? "Operational"
+                  : achievementRate >= 40
+                    ? "Steady Progress"
+                    : "Initial Validation"}
+              </p>
+            </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function CardStat({
+  label,
+  value,
+  icon,
+  color = "text-gray-900",
+}: {
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+  color?: string;
+}) {
+  return (
+    <div className="p-4 rounded-xl border border-gray-100 bg-white/50 shadow-xs hover:shadow-md transition-shadow">
+      <div className="flex items-center gap-2 text-gray-400 mb-1">
+        {icon}
+        <span className="text-[10px] font-bold uppercase tracking-wider">
+          {label}
+        </span>
+      </div>
+      <p className={cn("text-2xl font-black", color)}>{value}</p>
     </div>
   );
 }
