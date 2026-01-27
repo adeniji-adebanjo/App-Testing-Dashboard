@@ -5,7 +5,7 @@ export const CREDIT_BUREAU_PROJECT_ID = "credit-bureau-portal";
 
 export const creditBureauProject: Project = {
   id: CREDIT_BUREAU_PROJECT_ID,
-  name: "Credit Bureau Report Management Web App",
+  name: "Credit Bureau Portal",
   shortCode: "CBP",
   description:
     "A comprehensive web application for managing and analyzing credit bureau reports. Enables credit underwriters, analysts, and operations teams to efficiently process and evaluate credit information.",

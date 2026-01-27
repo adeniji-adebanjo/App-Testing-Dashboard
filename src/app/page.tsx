@@ -63,7 +63,7 @@ export default function ProjectHubPage() {
             manage test cases, and track defects across your portfolio.
           </p>
         </div>
-        <Button className="w-full md:w-auto shadow-lg shadow-primary/20 hover:shadow-xl transition-all gap-2 py-6">
+        <Button className="w-full md:w-auto shadow-lg shadow-primary/20 hover:shadow-xl transition-all gap-2 py-6 cursor-pointer">
           <Plus size={18} />
           Create New Project
         </Button>
@@ -148,8 +148,8 @@ export default function ProjectHubPage() {
               No projects found
             </h3>
             <p className="text-gray-500 mt-1 max-w-xs mx-auto">
-              We couldn't find any projects matching your search criteria. Try a
-              different keyword.
+              We couldn&apos;t find any projects matching your search criteria.
+              Try a different keyword.
             </p>
             <Button
               variant="outline"

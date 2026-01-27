@@ -51,7 +51,7 @@ export default function ProjectSwitcher({ className }: { className?: string }) {
             value="hub"
             className="focus:bg-gray-700 focus:text-white"
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 cursor-pointer">
               <LayoutGrid size={16} className="text-primary" />
               <span>Project Hub</span>
             </div>
@@ -81,7 +81,7 @@ export default function ProjectSwitcher({ className }: { className?: string }) {
             value="new"
             className="focus:bg-gray-700 focus:text-white text-primary"
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 cursor-pointer">
               <PlusCircle size={16} />
               <span>New Project</span>
             </div>

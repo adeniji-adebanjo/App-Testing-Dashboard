@@ -54,7 +54,9 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
     <div className="flex h-screen w-64 flex-col bg-gray-900 text-white shadow-2xl">
       <div className="flex h-16 items-center justify-between border-b border-gray-800 px-6">
         <h1 className="text-xl font-black tracking-tighter text-white uppercase italic">
-          Test<span className="text-primary not-italic">Portal</span>
+          <Link href="/">
+            Test<span className="text-primary not-italic">Portal</span>
+          </Link>
         </h1>
         {onClose && (
           <button

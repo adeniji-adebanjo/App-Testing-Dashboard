@@ -52,7 +52,7 @@ For detailed project-specific reports, navigate to the project's Reports page.
         <Button
           onClick={handleSave}
           variant="outline"
-          className="gap-2"
+          className="gap-2 cursor-pointer"
           size="sm"
         >
           {showSaved ? (
@@ -67,7 +67,11 @@ For detailed project-specific reports, navigate to the project's Reports page.
             </>
           )}
         </Button>
-        <Button onClick={handleExport} className="gap-2" size="sm">
+        <Button
+          onClick={handleExport}
+          className="gap-2 cursor-pointer"
+          size="sm"
+        >
           <Download className="h-4 w-4" />
           <span className="hidden sm:inline">Export Report</span>
         </Button>
