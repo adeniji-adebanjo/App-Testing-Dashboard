@@ -31,7 +31,9 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
 
   const getNavItems = () => {
     if (!projectId) {
-      const items = [{ name: "Project Hub", href: "/", icon: LayoutGrid }];
+      const items = [
+        { name: "Project Hub", href: "/dashboard", icon: LayoutGrid },
+      ];
       // Add Executive Dashboard for authenticated users
       if (isAuthenticated) {
         items.push({

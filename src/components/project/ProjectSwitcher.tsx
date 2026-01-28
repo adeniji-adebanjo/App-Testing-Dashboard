@@ -26,7 +26,7 @@ export default function ProjectSwitcher({ className }: { className?: string }) {
 
   const handleValueChange = (value: string) => {
     if (value === "hub") {
-      router.push("/");
+      router.push("/dashboard");
     } else if (value === "new") {
       router.push("/new-project");
     } else {

@@ -14,7 +14,8 @@ export default function Breadcrumbs() {
 
   // Custom mapping for IDs to Names
   const getSegmentName = (segment: string, index: number) => {
-    if (index === 0 && segment === "projects") return "Projects";
+    if (segment === "dashboard") return "Project Hub";
+    if (segment === "projects") return "Projects";
     if (index === 1 && currentProject && segment === currentProject.id) {
       return currentProject.shortCode;
     }
@@ -29,7 +30,7 @@ export default function Breadcrumbs() {
   return (
     <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
       <Link
-        href="/"
+        href="/dashboard"
         className="flex items-center hover:text-primary transition-colors"
       >
         <Home className="h-4 w-4" />

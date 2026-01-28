@@ -29,7 +29,7 @@ export default function LoginPage() {
     // Demo mode - just login with email
     if (!isSupabaseEnabled()) {
       demoLogin(email);
-      router.push("/");
+      router.push("/dashboard");
       return;
     }
 
@@ -42,7 +42,7 @@ export default function LoginPage() {
     const { success, error: signInError } = await signIn(email, password);
 
     if (success) {
-      router.push("/");
+      router.push("/dashboard");
     } else {
       setError(signInError || "Failed to sign in");
     }
@@ -50,7 +50,7 @@ export default function LoginPage() {
 
   const handleDemoLogin = () => {
     demoLogin("qa-executive@example.com");
-    router.push("/");
+    router.push("/dashboard");
   };
 
   return (

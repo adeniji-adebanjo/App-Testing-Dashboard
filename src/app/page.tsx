@@ -1,190 +1,142 @@
 "use client";
 
-import { useProject } from "@/context/ProjectContext";
-import ProjectCard from "@/components/project/ProjectCard";
-import { Button } from "@/components/ui/button";
-import { Plus, Search, Filter, LayoutGrid, List } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { useState, useMemo } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ProjectWithStats } from "@/types/project";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ExternalLink, Shield, BarChart3 } from "lucide-react";
+import { loadProjects } from "@/lib/projectStorage";
+import { Project } from "@/types/project";
 
-export default function ProjectHubPage() {
-  const { projects, isLoading, getProjectWithStats } = useProject();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [projectWithStats, setProjectWithStats] = useState<ProjectWithStats[]>(
-    [],
-  );
-  const [isStatsLoading, setIsStatsLoading] = useState(true);
+export default function PublicProjectsIndexPage() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load stats for all projects
-  useMemo(() => {
-    const loadAllStats = async () => {
-      setIsStatsLoading(true);
+  useEffect(() => {
+    const load = async () => {
       try {
-        const results = await Promise.all(
-          projects.map((p) => getProjectWithStats(p.id)),
-        );
-        setProjectWithStats(
-          results.filter((r): r is ProjectWithStats => r !== null),
-        );
-      } catch (err) {
-        console.error("Error loading project stats:", err);
+        const allProjects = await loadProjects();
+        // Only show active projects
+        setProjects(allProjects.filter((p) => p.status === "active"));
+      } catch (error) {
+        console.error("Failed to load projects:", error);
       } finally {
-        setIsStatsLoading(false);
+        setIsLoading(false);
       }
     };
+    load();
+  }, []);
 
-    if (projects.length > 0) {
-      loadAllStats();
-    } else if (!isLoading) {
-      setIsStatsLoading(false);
-    }
-  }, [projects, getProjectWithStats, isLoading]);
-
-  const filteredProjects = projectWithStats.filter(
-    (project) =>
-      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.shortCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.description.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 md:p-12">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <Skeleton className="h-12 w-64" />
+          <Skeleton className="h-6 w-96" />
+          <div className="grid gap-4 md:grid-cols-2">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-32" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
-            Project Hub
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-100 shadow-sm">
+        <div className="max-w-5xl mx-auto px-6 py-6 text-center">
+          <Badge
+            variant="outline"
+            className="mb-4 text-xs gap-1 bg-green-50 text-green-700 border-green-200"
+          >
+            <Shield size={12} />
+            Public Reports
+          </Badge>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+            QA Testing Portal
           </h1>
-          <p className="mt-3 text-lg text-gray-600 max-w-2xl">
-            Central management for all testing dashboards. Monitor progress,
-            manage test cases, and track defects across your portfolio.
+          <p className="text-gray-500 mt-2 max-w-md mx-auto">
+            View read-only quality assurance summaries for active projects
           </p>
         </div>
-        <Button className="w-full md:w-auto shadow-lg shadow-primary/20 hover:shadow-xl transition-all gap-2 py-6 cursor-pointer">
-          <Plus size={18} />
-          Create New Project
-        </Button>
-      </div>
+      </header>
 
-      {/* Filters & Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Search projects..."
-            className="pl-10 bg-gray-50/50 border-none focus-visible:ring-1 focus-visible:ring-primary/20"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 text-gray-600 bg-white"
-          >
-            <Filter size={14} />
-            Filter
-          </Button>
-          <div className="h-8 w-px bg-gray-100 mx-2 hidden sm:block" />
-          <div className="flex bg-gray-100 p-1 rounded-lg">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0 bg-white shadow-sm"
-            >
-              <LayoutGrid size={14} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0 text-gray-400 hover:text-gray-600"
-            >
-              <List size={14} />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Projects Grid */}
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {isLoading || isStatsLoading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-[380px] rounded-xl overflow-hidden border border-gray-100 bg-white p-6 space-y-4"
-            >
-              <Skeleton className="h-10 w-10 rounded-lg" />
-              <div className="space-y-2">
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-5/6" />
-              </div>
-              <div className="space-y-2 pt-4">
-                <Skeleton className="h-1.5 w-full" />
-                <div className="grid grid-cols-2 gap-4 pt-2">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                </div>
-              </div>
-              <div className="pt-6">
-                <Skeleton className="h-4 w-1/4" />
-              </div>
-            </div>
-          ))
-        ) : filteredProjects.length > 0 ? (
-          filteredProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))
-        ) : (
-          <div className="col-span-full py-20 text-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
-            <div className="inline-flex items-center justify-center p-4 bg-white rounded-full shadow-sm mb-4">
-              <Search className="h-8 w-8 text-gray-300" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              No projects found
-            </h3>
-            <p className="text-gray-500 mt-1 max-w-xs mx-auto">
-              We couldn&apos;t find any projects matching your search criteria.
-              Try a different keyword.
+      <main className="max-w-5xl mx-auto px-6 py-10">
+        {projects.length === 0 ? (
+          <div className="text-center py-20">
+            <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <h2 className="text-lg font-bold text-gray-900">
+              No Public Projects
+            </h2>
+            <p className="text-gray-500 text-sm mt-1">
+              There are no active projects available for public viewing.
             </p>
-            <Button
-              variant="outline"
-              className="mt-6"
-              onClick={() => setSearchQuery("")}
-            >
-              Clear Search
-            </Button>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {projects.map((project) => (
+              <Link
+                key={project.id}
+                href={`/public/projects/${project.id}`}
+                className="block group"
+              >
+                <Card className="border-none shadow-md hover:shadow-xl transition-all h-full">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div
+                        className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold shrink-0"
+                        style={{
+                          backgroundColor: project.color || "#6366F1",
+                        }}
+                      >
+                        {project.shortCode?.slice(0, 2)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-900 group-hover:text-primary transition-colors truncate">
+                          {project.name}
+                        </h3>
+                        <Badge
+                          variant="outline"
+                          className="mt-1 text-[10px] uppercase"
+                        >
+                          {project.phase}
+                        </Badge>
+                        {project.description && (
+                          <p className="text-xs text-gray-500 mt-2 line-clamp-2">
+                            {project.description}
+                          </p>
+                        )}
+                      </div>
+                      <ExternalLink
+                        size={16}
+                        className="text-gray-300 group-hover:text-primary transition-colors shrink-0"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
           </div>
         )}
-      </div>
 
-      {/* Newsletter or Info Section */}
-      <div className="mt-12 bg-linear-to-br from-primary/5 to-primary/10 rounded-3xl p-8 md:p-12 relative overflow-hidden">
-        <div className="relative z-10 max-w-2xl">
-          <Badge className="mb-4 bg-primary/20 text-primary border-none text-[10px] font-bold uppercase tracking-wider">
-            Coming Soon: PRD Auto-Checklist
-          </Badge>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Accelerate your testing setup with AI
-          </h2>
-          <p className="text-gray-600 mb-8 max-w-lg leading-relaxed">
-            Upload your Product Requirement Documents (PRD) and let our
-            intelligent engine generate comprehensive test cases and checklists
-            automatically.
+        {/* Footer */}
+        <div className="text-center pt-12 border-t border-gray-200 mt-12">
+          <p className="text-sm text-gray-400">
+            Powered by TestPortal • {new Date().getFullYear()}
           </p>
-          <Button variant="default" className="shadow-lg shadow-primary/30">
-            Join the Waitlist
-          </Button>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2"
+          >
+            <ExternalLink size={12} />
+            Access Full Dashboard
+          </Link>
         </div>
-
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-64 h-64 bg-primary/20 rounded-full blur-3xl opacity-50" />
-        <div className="absolute bottom-0 right-0 translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl opacity-30" />
-      </div>
+      </main>
     </div>
   );
 }
