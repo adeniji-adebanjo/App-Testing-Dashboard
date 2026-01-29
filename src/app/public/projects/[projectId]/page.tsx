@@ -99,31 +99,31 @@ export default function PublicProjectSummaryPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10 space-y-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8">
       {/* Project Info */}
-      <div className="text-center max-w-2xl mx-auto">
+      <div className="text-center max-w-2xl mx-auto px-2">
         <Badge
           variant="outline"
-          className="mb-4 text-xs uppercase tracking-wider"
+          className="mb-4 text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black px-3 py-1 bg-gray-50 border-gray-100"
         >
           {project.phase}
         </Badge>
-        <h2 className="text-3xl font-black text-gray-900 tracking-tight">
+        <h2 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tighter leading-tight">
           {project.name}
         </h2>
         {project.description && (
-          <p className="text-gray-500 mt-3 leading-relaxed">
+          <p className="text-gray-500 mt-3 text-sm sm:text-base leading-relaxed font-medium">
             {project.description}
           </p>
         )}
       </div>
 
       {/* Primary Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4 px-2 sm:px-0">
         <StatCard
           label="Pass Rate"
           value={`${stats.passRate}%`}
-          icon={<Target className="w-5 h-5" />}
+          icon={<Target className="w-4 h-4 sm:w-5 sm:h-5" />}
           color={
             stats.passRate >= 80
               ? "green"
@@ -135,94 +135,96 @@ export default function PublicProjectSummaryPage() {
         <StatCard
           label="Total Tests"
           value={stats.totalTestCases.toString()}
-          icon={<CheckCircle2 className="w-5 h-5" />}
+          icon={<CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />}
           color="blue"
         />
         <StatCard
           label="Open Defects"
           value={stats.defectsOpen.toString()}
-          icon={<Bug className="w-5 h-5" />}
+          icon={<Bug className="w-4 h-4 sm:w-5 sm:h-5" />}
           color={stats.defectsOpen === 0 ? "green" : "red"}
         />
         <StatCard
           label="Resolved"
           value={stats.defectsClosed.toString()}
-          icon={<CheckCircle2 className="w-5 h-5" />}
+          icon={<CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />}
           color="green"
         />
       </div>
 
       {/* Test Execution Breakdown */}
-      <Card className="border-none shadow-lg overflow-hidden">
-        <CardHeader className="bg-gray-50 border-b border-gray-100">
-          <CardTitle className="text-lg">Test Execution Status</CardTitle>
-          <CardDescription>
-            Current testing progress for this project
+      <Card className="border-none shadow-xl overflow-hidden bg-white/50 backdrop-blur-sm mx-2 sm:mx-0">
+        <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-5 sm:px-8 py-5">
+          <CardTitle className="text-lg sm:text-xl font-black">
+            Execution Status
+          </CardTitle>
+          <CardDescription className="text-xs font-medium text-gray-400 uppercase tracking-widest mt-1">
+            Current Performance Benchmarks
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <CardContent className="p-5 sm:p-8">
+          <div className="grid grid-cols-2 gap-3 sm:gap-6 mb-8 mt-2">
             <StatusBlock
               label="Passed"
               value={stats.passed}
               total={stats.totalTestCases}
               color="bg-green-500"
-              icon={<CheckCircle2 className="w-4 h-4" />}
+              icon={<CheckCircle2 className="w-3.5 h-3.5" />}
             />
             <StatusBlock
               label="Failed"
               value={stats.failed}
               total={stats.totalTestCases}
               color="bg-red-500"
-              icon={<XCircle className="w-4 h-4" />}
+              icon={<XCircle className="w-3.5 h-3.5" />}
             />
             <StatusBlock
               label="Pending"
               value={stats.pending}
               total={stats.totalTestCases}
               color="bg-amber-500"
-              icon={<Clock className="w-4 h-4" />}
+              icon={<Clock className="w-3.5 h-3.5" />}
             />
             <StatusBlock
               label="Blocked"
               value={stats.blocked}
               total={stats.totalTestCases}
               color="bg-gray-500"
-              icon={<AlertTriangle className="w-4 h-4" />}
+              icon={<AlertTriangle className="w-3.5 h-3.5" />}
             />
           </div>
 
           {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>Overall Progress</span>
-              <span>
+          <div className="space-y-3 bg-gray-50/50 p-4 sm:p-6 rounded-2xl border border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1.5 text-[11px] font-black uppercase tracking-wider text-gray-400">
+              <span>Overall Stability</span>
+              <span className="text-gray-900">
                 {stats.passed + stats.failed} of {stats.totalTestCases} executed
               </span>
             </div>
-            <div className="flex h-4 rounded-full overflow-hidden bg-gray-100">
+            <div className="flex h-3 sm:h-4 rounded-full overflow-hidden bg-white border border-gray-100 shadow-inner">
               {stats.totalTestCases > 0 && (
                 <>
                   <div
-                    className="bg-green-500 transition-all"
+                    className="bg-green-500 transition-all duration-1000"
                     style={{
                       width: `${(stats.passed / stats.totalTestCases) * 100}%`,
                     }}
                   />
                   <div
-                    className="bg-red-500 transition-all"
+                    className="bg-red-500 transition-all duration-1000"
                     style={{
                       width: `${(stats.failed / stats.totalTestCases) * 100}%`,
                     }}
                   />
                   <div
-                    className="bg-amber-500 transition-all"
+                    className="bg-amber-500 transition-all duration-1000"
                     style={{
                       width: `${(stats.pending / stats.totalTestCases) * 100}%`,
                     }}
                   />
                   <div
-                    className="bg-gray-400 transition-all"
+                    className="bg-gray-400 transition-all duration-1000"
                     style={{
                       width: `${(stats.blocked / stats.totalTestCases) * 100}%`,
                     }}
@@ -235,16 +237,16 @@ export default function PublicProjectSummaryPage() {
       </Card>
 
       {/* Footer */}
-      <div className="text-center pt-8 border-t border-gray-200">
-        <p className="text-sm text-gray-400 mb-2">
-          Generated by TestPortal • {new Date().toLocaleDateString()}
+      <div className="text-center pt-12 border-t border-gray-100 pb-12 mb-8 mx-2 sm:mx-0">
+        <p className="text-[10px] sm:text-xs text-gray-400 mb-5 font-bold uppercase tracking-widest">
+          Public QA Record • {new Date().toLocaleDateString()}
         </p>
         <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+          href="/"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-200 text-xs font-black uppercase tracking-widest text-gray-600 hover:bg-gray-50 transition-all"
         >
-          <ExternalLink size={12} />
-          Access Full Dashboard
+          <Target size={14} />
+          View All Projects
         </Link>
       </div>
     </div>
@@ -263,20 +265,26 @@ function StatCard({
   color: "green" | "red" | "amber" | "blue";
 }) {
   const colorClasses = {
-    green: "bg-green-100 text-green-600",
-    red: "bg-red-100 text-red-600",
-    amber: "bg-amber-100 text-amber-600",
-    blue: "bg-blue-100 text-blue-600",
+    green: "bg-green-50 text-green-600 border border-green-100",
+    red: "bg-red-50 text-red-600 border border-red-100",
+    amber: "bg-amber-50 text-amber-600 border border-amber-100",
+    blue: "bg-blue-50 text-blue-600 border border-blue-100",
   };
 
   return (
-    <Card className="border-none shadow-md">
-      <CardContent className="p-5">
-        <div className={cn("p-2 rounded-lg w-fit", colorClasses[color])}>
+    <Card className="border-none shadow-md overflow-hidden bg-white/80">
+      <CardContent className="p-4 sm:p-5">
+        <div
+          className={cn("p-1.5 sm:p-2 rounded-lg w-fit", colorClasses[color])}
+        >
           {icon}
         </div>
-        <p className="text-3xl font-black text-gray-900 mt-3">{value}</p>
-        <p className="text-sm text-gray-500 mt-1">{label}</p>
+        <p className="text-2xl sm:text-3xl font-black text-gray-900 mt-2.5 sm:mt-3 tracking-tighter">
+          {value}
+        </p>
+        <p className="text-[9px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider mt-1">
+          {label}
+        </p>
       </CardContent>
     </Card>
   );
@@ -298,13 +306,21 @@ function StatusBlock({
   const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
 
   return (
-    <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
-      <div className="flex items-center gap-2 mb-2">
-        <div className={cn("p-1.5 rounded-md text-white", color)}>{icon}</div>
-        <span className="text-xs font-medium text-gray-500">{label}</span>
+    <div className="p-3 sm:p-5 rounded-2xl bg-white border border-gray-100 shadow-sm transition-transform hover:scale-[1.02] duration-300">
+      <div className="flex items-center gap-2 mb-2 sm:mb-3">
+        <div className={cn("p-1.5 rounded-lg text-white shadow-sm", color)}>
+          {icon}
+        </div>
+        <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-400">
+          {label}
+        </span>
       </div>
-      <p className="text-2xl font-black text-gray-900">{value}</p>
-      <p className="text-xs text-gray-400">{percentage}% of total</p>
+      <p className="text-xl sm:text-3xl font-black text-gray-900 leading-none">
+        {value}
+      </p>
+      <p className="text-[9px] sm:text-[10px] text-gray-400 font-bold mt-1.5 sm:mt-2">
+        {percentage}% of total
+      </p>
     </div>
   );
 }
