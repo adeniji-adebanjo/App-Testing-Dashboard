@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ShieldCheck, UserCheck, Calendar, Lock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export default function SignOffSection() {
@@ -170,18 +171,5 @@ export default function SignOffSection() {
         )}
       </CardContent>
     </Card>
-  );
-}
-
-function Badge({ children, className, variant }: any) {
-  return (
-    <div
-      className={cn(
-        "px-2 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center",
-        className,
-      )}
-    >
-      {children}
-    </div>
   );
 }

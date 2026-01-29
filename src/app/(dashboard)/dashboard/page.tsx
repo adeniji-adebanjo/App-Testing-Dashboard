@@ -2,6 +2,7 @@
 
 import { useProject } from "@/context/ProjectContext";
 import ProjectCard from "@/components/project/ProjectCard";
+import ProjectListItem from "@/components/project/ProjectListItem";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Filter, LayoutGrid, List } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,8 @@ import { useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ProjectWithStats } from "@/types/project";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export default function ProjectHubPage() {
   const { projects, isLoading, getProjectWithStats } = useProject();
@@ -17,6 +20,7 @@ export default function ProjectHubPage() {
     [],
   );
   const [isStatsLoading, setIsStatsLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Load stats for all projects
   useMemo(() => {
@@ -63,9 +67,14 @@ export default function ProjectHubPage() {
             manage test cases, and track defects across your portfolio.
           </p>
         </div>
-        <Button className="w-full md:w-auto shadow-lg shadow-primary/20 hover:shadow-xl transition-all gap-2 py-6 cursor-pointer">
-          <Plus size={18} />
-          Create New Project
+        <Button
+          asChild
+          className="w-full md:w-auto shadow-lg shadow-primary/20 hover:shadow-xl transition-all gap-2 py-6 cursor-pointer"
+        >
+          <Link href="/new-project">
+            <Plus size={18} />
+            Create New Project
+          </Link>
         </Button>
       </div>
 
@@ -94,14 +103,26 @@ export default function ProjectHubPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 w-7 p-0 bg-white shadow-sm"
+              onClick={() => setViewMode("grid")}
+              className={cn(
+                "h-7 w-7 p-0 transition-all",
+                viewMode === "grid"
+                  ? "bg-white shadow-sm text-primary"
+                  : "text-gray-400 hover:text-gray-600",
+              )}
             >
               <LayoutGrid size={14} />
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 w-7 p-0 text-gray-400 hover:text-gray-600"
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "h-7 w-7 p-0 transition-all",
+                viewMode === "list"
+                  ? "bg-white shadow-sm text-primary"
+                  : "text-gray-400 hover:text-gray-600",
+              )}
             >
               <List size={14} />
             </Button>
@@ -109,36 +130,54 @@ export default function ProjectHubPage() {
         </div>
       </div>
 
-      {/* Projects Grid */}
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      {/* Projects Container */}
+      <div
+        className={cn(
+          viewMode === "grid"
+            ? "grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+            : "flex flex-col gap-4",
+        )}
+      >
         {isLoading || isStatsLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="h-[380px] rounded-xl overflow-hidden border border-gray-100 bg-white p-6 space-y-4"
+              className={cn(
+                "rounded-xl overflow-hidden border border-gray-100 bg-white p-6 space-y-4",
+                viewMode === "grid"
+                  ? "h-[380px]"
+                  : "h-[100px] flex items-center justify-between gap-6 space-y-0 py-0",
+              )}
             >
-              <Skeleton className="h-10 w-10 rounded-lg" />
-              <div className="space-y-2">
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-5/6" />
-              </div>
-              <div className="space-y-2 pt-4">
-                <Skeleton className="h-1.5 w-full" />
-                <div className="grid grid-cols-2 gap-4 pt-2">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
+              <div className="flex items-center gap-4 flex-1">
+                <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
                 </div>
               </div>
-              <div className="pt-6">
-                <Skeleton className="h-4 w-1/4" />
+              {viewMode === "grid" && (
+                <div className="space-y-2 pt-4">
+                  <Skeleton className="h-1.5 w-full" />
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                </div>
+              )}
+              <div className={viewMode === "grid" ? "pt-6" : "shrink-0"}>
+                <Skeleton className="h-4 w-24" />
               </div>
             </div>
           ))
         ) : filteredProjects.length > 0 ? (
-          filteredProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))
+          filteredProjects.map((project) =>
+            viewMode === "grid" ? (
+              <ProjectCard key={project.id} project={project} />
+            ) : (
+              <ProjectListItem key={project.id} project={project} />
+            ),
+          )
         ) : (
           <div className="col-span-full py-20 text-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
             <div className="inline-flex items-center justify-center p-4 bg-white rounded-full shadow-sm mb-4">

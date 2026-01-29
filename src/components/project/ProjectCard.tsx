@@ -101,7 +101,11 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             <Progress
               value={project.stats.passRate}
               className="h-1.5"
-              style={{ "--progress-foreground": project.color } as any}
+              style={
+                {
+                  "--progress-foreground": project.color,
+                } as React.CSSProperties
+              }
             />
           </div>
 
@@ -149,7 +153,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             )}
           </div>
         </CardContent>
-        <CardFooter className="pt-0 pb-4 flex justify-between items-center text-xs text-gray-400 border-t border-gray-50 mt-auto pt-4">
+        <CardFooter className="pb-4 flex justify-between items-center text-xs text-gray-400 border-t border-gray-50 mt-auto pt-4">
           <div className="flex items-center gap-1">
             <Clock size={12} />
             <span>Phase: {phaseLabels[project.phase]}</span>
