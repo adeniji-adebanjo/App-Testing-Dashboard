@@ -166,6 +166,8 @@ export const initializeProjects = async (): Promise<Project[]> => {
   return loadProjects();
 };
 
+let isSyncing = false;
+
 // Load all projects
 export const loadProjects = async (): Promise<Project[]> => {
   // Try to load from Supabase 'projects' table
@@ -188,14 +190,49 @@ export const loadProjects = async (): Promise<Project[]> => {
         // Merge with local projects to prevent data loss of unsynced projects
         const localProjects = loadProjectsFromLocal();
         const cloudProjectIds = new Set(cloudProjects.map((p) => p.id));
-        const localOnlyProjects = localProjects.filter(
-          (p) => !cloudProjectIds.has(p.id),
+        const cloudProjectNames = new Set(
+          cloudProjects.map((p) => p.name.toLowerCase()),
+        );
+        const cloudProjectCodes = new Set(
+          cloudProjects.map((p) => p.shortCode.toLowerCase()),
         );
 
+        const localOnlyProjects = localProjects.filter((p) => {
+          // If ID already exists in cloud, it's definitely not local-only
+          if (cloudProjectIds.has(p.id)) return false;
+
+          // If a project with the same name or code already exists,
+          // we should link it instead of creating a new one (duplicate prevention)
+          const nameExists = cloudProjectNames.has(p.name.toLowerCase());
+          const codeExists = cloudProjectCodes.has(p.shortCode.toLowerCase());
+
+          if (nameExists || codeExists) {
+            console.log(
+              `Found existing cloud project for ${p.name}, updating local ID...`,
+            );
+            // Find the matching cloud project to get its ID
+            const match = cloudProjects.find(
+              (cp) =>
+                cp.name.toLowerCase() === p.name.toLowerCase() ||
+                cp.shortCode.toLowerCase() === p.shortCode.toLowerCase(),
+            );
+
+            if (match) {
+              // This part is subtle - we want to update the local ID immediately
+              // but we need to return false so it doesn't get synced as a NEW project
+              setTimeout(() => migrateLocalIdToCloudId(p.id, match.id), 0);
+            }
+            return false;
+          }
+
+          return true;
+        });
+
         // Auto-sync local projects to cloud if valid
-        if (localOnlyProjects.length > 0) {
-          syncLocalProjectsToCloud(localOnlyProjects).then(() => {
-            // Optional: trigger re-render or log success
+        if (localOnlyProjects.length > 0 && !isSyncing) {
+          isSyncing = true;
+          syncLocalProjectsToCloud(localOnlyProjects).finally(() => {
+            isSyncing = false;
             console.log("Synced local projects to cloud");
           });
         }
@@ -214,6 +251,20 @@ export const loadProjects = async (): Promise<Project[]> => {
   }
 
   return loadProjectsFromLocal();
+};
+
+// Helper function to update a local ID to match a newly found cloud ID
+const migrateLocalIdToCloudId = async (oldId: string, newId: string) => {
+  console.log(`Migrating local storage from ${oldId} to ${newId}`);
+  const localProjects = loadProjectsFromLocal();
+  const index = localProjects.findIndex((p) => p.id === oldId);
+  if (index !== -1) {
+    localProjects[index].id = newId;
+    saveProjectsToLocal(localProjects);
+
+    // Notify about ID change
+    notifySyncComplete([{ oldId, newId }]);
+  }
 };
 
 // Helper to sync local projects and notify on completion
