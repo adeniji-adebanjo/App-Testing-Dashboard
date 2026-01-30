@@ -38,6 +38,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Project } from "@/types/project";
 import { PRDUploader } from "@/components/project/PRDUploader";
+import { ProjectTabsManager } from "@/components/project/ProjectTabsManager";
 
 const PROJECT_COLORS = [
   "#6366F1", // Indigo
@@ -462,6 +463,12 @@ export default function ProjectSettingsPage() {
               <PRDUploader projectId={currentProject.id} />
             </CardContent>
           </Card>
+
+          {/* Testing Tabs Configuration */}
+          <ProjectTabsManager
+            key={currentProject.id}
+            projectId={currentProject.id}
+          />
 
           {/* Danger Zone */}
           <Card className="border border-red-100 shadow-sm bg-red-50/30 overflow-hidden">

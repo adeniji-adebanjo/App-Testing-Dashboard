@@ -18,7 +18,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { TestCase, TestObjective } from "@/types/test-case";
-import { useUpdateTestCases, useUpdateObjectives } from "@/hooks/useTestData";
+import {
+  useUpdateTestCases,
+  useUpdateObjectives,
+  useUpdateProjectTabs,
+} from "@/hooks/useTestData";
+import { ProjectTab } from "@/lib/cloudStorage";
 
 interface PRDUploaderProps {
   projectId: string;
@@ -37,7 +42,21 @@ interface GeneratedObjective {
   category?: string;
 }
 
+// Type for AI-generated tabs
+interface GeneratedTab {
+  id?: string;
+  projectId?: string;
+  name?: string;
+  slug?: string;
+  description?: string;
+  icon?: string;
+  order?: number;
+  isDefault?: boolean;
+  aiGenerated?: boolean;
+}
+
 interface ParsedResult {
+  tabs: GeneratedTab[];
   testCases: Partial<TestCase>[];
   objectives: GeneratedObjective[];
   analysis: string;
@@ -49,13 +68,16 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
   const [result, setResult] = useState<ParsedResult | null>(null);
   const [importTestCases, setImportTestCases] = useState(true);
   const [importObjectives, setImportObjectives] = useState(true);
+  const [importTabs, setImportTabs] = useState(true);
 
   const { mutate: updateTestCases, isPending: isSavingTests } =
     useUpdateTestCases(projectId);
   const { mutate: updateObjectives, isPending: isSavingObjectives } =
     useUpdateObjectives(projectId);
+  const { mutate: updateProjectTabs, isPending: isSavingTabs } =
+    useUpdateProjectTabs(projectId);
 
-  const isSaving = isSavingTests || isSavingObjectives;
+  const isSaving = isSavingTests || isSavingObjectives || isSavingTabs;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -96,6 +118,7 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
       }
 
       setResult({
+        tabs: data.tabs || [],
         testCases: data.testCases || [],
         objectives: data.objectives || [],
         analysis: data.analysis + (data.usedMock ? " (Demo Mode)" : ""),
@@ -103,6 +126,7 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
     } catch (error) {
       console.error("PRD analysis failed:", error);
       setResult({
+        tabs: [],
         testCases: [],
         objectives: [],
         analysis: `Analysis failed: ${error instanceof Error ? error.message : "Unknown error"}. Please try again.`,
@@ -154,6 +178,25 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
           }),
         );
         updateObjectives(testObjectives);
+      }
+
+      if (importTabs && result.tabs && result.tabs.length > 0) {
+        const tabs: ProjectTab[] = result.tabs.map((t) => ({
+          id:
+            t.id ||
+            `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          projectId,
+          name: t.name || "Custom Tab",
+          slug: t.slug || "custom-tab",
+          description: t.description,
+          icon: t.icon,
+          order: t.order || 0,
+          isDefault: !!t.isDefault,
+          aiGenerated: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }));
+        updateProjectTabs(tabs);
       }
 
       // Reset state after import
@@ -267,6 +310,40 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
               </div>
             </CardContent>
           </Card>
+
+          {/* Tabs Section */}
+          {result.tabs && result.tabs.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={14} className="text-purple-600" />
+                  <p className="text-xs font-bold text-gray-700">
+                    Suggested Tabs ({result.tabs.length})
+                  </p>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={importTabs}
+                    onChange={(e) => setImportTabs(e.target.checked)}
+                    className="rounded"
+                  />
+                  Import
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {result.tabs.map((tab, idx) => (
+                  <Badge
+                    key={idx}
+                    variant="outline"
+                    className="bg-purple-50 text-purple-700 border-purple-200"
+                  >
+                    {tab.name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Test Cases Section */}
           {result.testCases.length > 0 && (

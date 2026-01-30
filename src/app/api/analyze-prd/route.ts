@@ -16,10 +16,14 @@ export async function POST(request: NextRequest) {
 
     // Check if API key is configured
     if (!GEMINI_API_KEY) {
+      console.log(
+        "No GOOGLE_GENERATIVE_AI_API_KEY configured, using mock data",
+      );
       // Return mock data if no API key
       return NextResponse.json({
         success: true,
         usedMock: true,
+        tabs: generateMockTabs(projectId),
         testCases: generateMockTestCases(projectId),
         objectives: generateMockObjectives(projectId),
         analysis:
@@ -31,18 +35,26 @@ export async function POST(request: NextRequest) {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // Construct the prompt for test cases AND objectives
-    const prompt = `You are a QA Test Case and Objectives Generator. Analyze the following Product Requirements Document (PRD) and extract:
+    // Construct the prompt for test cases, objectives, AND tabs
+    const prompt = `You are a QA Test Architecture Generator. Analyze the following Product Requirements Document (PRD) and extract:
 
-1. TEST CASES - For each requirement or feature, generate test cases with:
+1. TESTING TABS - Identify the main testing categories needed for this project. Suggest 3-6 relevant tabs such as:
+   - Functional Testing, API Testing, Security Testing, Performance Testing, Integration Testing, UI/UX Testing, etc.
+   Each tab should have:
+   - name: string (display name)
+   - slug: string (URL-friendly lowercase with hyphens)
+   - description: string (brief description of what this tab tests)
+   - icon: string (one of: "clipboard-list", "shield", "activity", "database", "globe", "lock", "zap", "users")
+
+2. TEST CASES - For each requirement or feature, generate test cases with:
    - testCaseId: string (format: TC-XXX)
    - scenario: string (the test case title)
-   - module: string (feature area)
+   - module: string (should match one of the tab names above)
    - steps: string (numbered steps, one per line)
    - expectedResult: string
    - priority: "high" | "medium" | "low"
 
-2. OBJECTIVES/SUCCESS METRICS - Extract key project objectives with:
+3. OBJECTIVES/SUCCESS METRICS - Extract key project objectives with:
    - id: string (format: OBJ-XXX)
    - title: string (objective name)
    - description: string (what this objective aims to achieve)
@@ -51,8 +63,9 @@ export async function POST(request: NextRequest) {
    - unit: string (e.g., "%", "count", "hours")
    - category: "quality" | "performance" | "coverage" | "efficiency"
 
-Return the output as a JSON object with two arrays:
+Return the output as a JSON object with three arrays:
 {
+  "tabs": [...],
   "testCases": [...],
   "objectives": [...]
 }
@@ -67,8 +80,14 @@ Return ONLY valid JSON, no markdown formatting or explanation.`;
     const response = await result.response;
     const text = response.text();
 
+    console.log("Gemini API response received, parsing...");
+
     // Parse the JSON response
-    let parsedData: { testCases?: unknown[]; objectives?: unknown[] } = {};
+    let parsedData: {
+      tabs?: unknown[];
+      testCases?: unknown[];
+      objectives?: unknown[];
+    } = {};
     try {
       // Try to extract JSON object from the response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -79,6 +98,7 @@ Return ONLY valid JSON, no markdown formatting or explanation.`;
         const testCasesMatch = text.match(/\[[\s\S]*?\]/);
         if (testCasesMatch) {
           parsedData = {
+            tabs: [],
             testCases: JSON.parse(testCasesMatch[0]),
             objectives: [],
           };
@@ -88,17 +108,36 @@ Return ONLY valid JSON, no markdown formatting or explanation.`;
       }
     } catch (parseError) {
       console.error("Failed to parse Gemini response:", parseError);
-      console.log("Raw response:", text);
+      console.log("Raw response:", text.substring(0, 500));
       // Return mock data if parsing fails
       return NextResponse.json({
         success: true,
         usedMock: true,
+        tabs: generateMockTabs(projectId),
         testCases: generateMockTestCases(projectId),
         objectives: generateMockObjectives(projectId),
         analysis:
           "AI analysis completed but response parsing failed. Using sample data.",
       });
     }
+
+    // Format tabs to match our schema
+    const tabs = (
+      Array.isArray(parsedData.tabs) ? parsedData.tabs : []
+    ) as Record<string, unknown>[];
+    const formattedTabs = tabs.map((tab, index) => ({
+      id: `tab-${Date.now()}-${index}`,
+      projectId: projectId,
+      name: (tab.name as string) || `Tab ${index + 1}`,
+      slug: (tab.slug as string) || `tab-${index + 1}`,
+      description: (tab.description as string) || "",
+      icon: (tab.icon as string) || "clipboard-list",
+      order: index,
+      isDefault: false,
+      aiGenerated: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
 
     // Format test cases to match our schema
     const testCases = (
@@ -134,12 +173,17 @@ Return ONLY valid JSON, no markdown formatting or explanation.`;
       category: (obj.category as string) || "quality",
     }));
 
+    console.log(
+      `AI analysis complete: ${formattedTabs.length} tabs, ${formattedTestCases.length} test cases, ${formattedObjectives.length} objectives`,
+    );
+
     return NextResponse.json({
       success: true,
       usedMock: false,
+      tabs: formattedTabs,
       testCases: formattedTestCases,
       objectives: formattedObjectives,
-      analysis: `AI analysis complete. Extracted ${formattedTestCases.length} test cases and ${formattedObjectives.length} objectives from the PRD.`,
+      analysis: `AI analysis complete. Generated ${formattedTabs.length} testing tabs, ${formattedTestCases.length} test cases, and ${formattedObjectives.length} objectives from the PRD.`,
     });
   } catch (error) {
     console.error("PRD analysis error:", error);
@@ -148,6 +192,64 @@ Return ONLY valid JSON, no markdown formatting or explanation.`;
       { status: 500 },
     );
   }
+}
+
+// Mock tabs generator for demo mode
+function generateMockTabs(projectId: string) {
+  return [
+    {
+      id: `tab-${Date.now()}-1`,
+      projectId: projectId,
+      name: "Functional Testing",
+      slug: "functional-testing",
+      description: "Test core business functionality and user workflows",
+      icon: "clipboard-list",
+      order: 0,
+      isDefault: true,
+      aiGenerated: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: `tab-${Date.now()}-2`,
+      projectId: projectId,
+      name: "API Testing",
+      slug: "api-testing",
+      description: "Validate API endpoints, responses, and integrations",
+      icon: "database",
+      order: 1,
+      isDefault: false,
+      aiGenerated: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: `tab-${Date.now()}-3`,
+      projectId: projectId,
+      name: "Security Testing",
+      slug: "security-testing",
+      description: "Test authentication, authorization, and data protection",
+      icon: "shield",
+      order: 2,
+      isDefault: false,
+      aiGenerated: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      id: `tab-${Date.now()}-4`,
+      projectId: projectId,
+      name: "Performance Testing",
+      slug: "performance-testing",
+      description: "Measure response times, load capacity, and scalability",
+      icon: "activity",
+      order: 3,
+      isDefault: false,
+      aiGenerated: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ];
 }
 
 // Mock test case generator for demo mode

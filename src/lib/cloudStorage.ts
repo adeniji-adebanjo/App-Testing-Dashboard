@@ -22,14 +22,84 @@ const STORAGE_KEYS = {
   QUALITY_GATES: "credit_bureau_quality_gates",
   ENVIRONMENTS: "credit_bureau_environments",
   SIGN_OFFS: "credit_bureau_sign_offs",
+  PROJECT_TABS: "credit_bureau_project_tabs",
   LAST_UPDATED: "credit_bureau_last_updated",
 };
 
-// Get or create user ID
+// Get user ID - prioritize authenticated Supabase user over session-based user
 const getUserId = async (): Promise<string | null> => {
   if (!isSupabaseEnabled()) return null;
 
   try {
+    // First, try to get the authenticated user from Supabase Auth
+    const { data: authData } = await supabase!.auth.getUser();
+
+    if (authData?.user) {
+      // User is authenticated via Supabase Auth
+      const authUserId = authData.user.id;
+
+      // Check if this auth user has a record in our users table
+      const { data: existingAuthUser, error: authUserError } = await supabase!
+        .from("users")
+        .select("id")
+        .eq("id", authUserId)
+        .single();
+
+      if (existingAuthUser) {
+        // Update last active
+        await supabase!
+          .from("users")
+          .update({ last_active: new Date().toISOString() })
+          .eq("id", existingAuthUser.id);
+        return existingAuthUser.id;
+      }
+
+      // If no record exists, check if there's a session-based record we can migrate
+      const sessionId = getSessionId();
+      const { data: sessionUser } = await supabase!
+        .from("users")
+        .select("id")
+        .eq("session_id", sessionId)
+        .single();
+
+      if (sessionUser) {
+        // Migrate session data to auth user by updating the user ID
+        // First, update test_data to point to auth user
+        await supabase!
+          .from("test_data")
+          .update({ user_id: authUserId })
+          .eq("user_id", sessionUser.id);
+
+        // Delete the old session-based user record
+        await supabase!.from("users").delete().eq("id", sessionUser.id);
+      }
+
+      // Create/ensure user record with auth user ID
+      const { data: newAuthUser, error: createAuthError } = await supabase!
+        .from("users")
+        .upsert([
+          {
+            id: authUserId,
+            session_id: `auth_${authUserId}`,
+            last_active: new Date().toISOString(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (createAuthError && createAuthError.code !== "23505") {
+        // Ignore unique violation
+        console.warn(
+          "Error creating auth user record:",
+          createAuthError.message,
+        );
+        // Still return the auth user ID as it's valid
+      }
+
+      return authUserId;
+    }
+
+    // Fallback to session-based user for unauthenticated access
     const sessionId = getSessionId();
 
     // Check if user exists
@@ -175,22 +245,40 @@ export const loadFromCloud = async <T>(
 
   try {
     const userId = await getUserId();
-    if (!userId) return localLoad(storageKey, defaultValue);
 
-    const { data, error } = await supabase!
-      .from("test_data")
-      .select("data")
-      .eq("user_id", userId)
-      .eq("data_type", storageKey)
-      .single();
+    // Primary strategy: Try to get data for the current authenticated user
+    if (userId) {
+      const { data, error } = await supabase!
+        .from("test_data")
+        .select("data")
+        .eq("user_id", userId)
+        .eq("data_type", storageKey)
+        .single();
 
-    if (error || !data) {
-      return localLoad(storageKey, defaultValue);
+      if (data && !error) {
+        localSave(storageKey, data.data);
+        return data.data as T;
+      }
     }
 
-    // Also save to localStorage for offline access
-    localSave(storageKey, data.data);
-    return data.data as T;
+    // Secondary strategy: If specific to a project, try to find ANY data for this key
+    // This supports public views where the viewer is not the owner
+    if (projectId) {
+      const { data: publicData, error: publicError } = await supabase!
+        .from("test_data")
+        .select("data")
+        .eq("data_type", storageKey)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (publicData && !publicError) {
+        localSave(storageKey, publicData.data);
+        return publicData.data as T;
+      }
+    }
+
+    return localLoad(storageKey, defaultValue);
   } catch (error) {
     console.error("Error loading from cloud:", error);
     return localLoad(storageKey, defaultValue);
@@ -318,6 +406,34 @@ export const saveSignOffs = async (
 
 export const loadSignOffs = async (projectId?: string): Promise<SignOff[]> => {
   return loadFromCloud<SignOff[]>(STORAGE_KEYS.SIGN_OFFS, [], projectId);
+};
+
+// Project Tabs - for customizable navigation per project
+export interface ProjectTab {
+  id: string;
+  projectId: string;
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  order: number;
+  isDefault: boolean;
+  aiGenerated: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const saveProjectTabs = async (
+  tabs: ProjectTab[],
+  projectId?: string,
+): Promise<boolean> => {
+  return saveToCloud(STORAGE_KEYS.PROJECT_TABS, tabs, projectId);
+};
+
+export const loadProjectTabs = async (
+  projectId?: string,
+): Promise<ProjectTab[]> => {
+  return loadFromCloud<ProjectTab[]>(STORAGE_KEYS.PROJECT_TABS, [], projectId);
 };
 
 export const getLastUpdated = (): string | null => {

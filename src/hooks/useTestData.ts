@@ -14,6 +14,9 @@ import {
   saveMetrics,
   loadSignOffs,
   saveSignOffs,
+  loadProjectTabs,
+  saveProjectTabs,
+  ProjectTab,
 } from "@/lib/cloudStorage";
 import {
   TestCase,
@@ -142,6 +145,26 @@ export function useUpdateSignOffs(projectId: string) {
     mutationFn: (signOffs: SignOff[]) => saveSignOffs(signOffs, projectId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["signOffs", projectId] });
+    },
+  });
+}
+
+// --- Project Tabs ---
+
+export function useProjectTabs(projectId: string) {
+  return useQuery({
+    queryKey: ["projectTabs", projectId],
+    queryFn: () => loadProjectTabs(projectId),
+    enabled: !!projectId,
+  });
+}
+
+export function useUpdateProjectTabs(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (tabs: ProjectTab[]) => saveProjectTabs(tabs, projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projectTabs", projectId] });
     },
   });
 }
