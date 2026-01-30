@@ -1,4 +1,3 @@
-// src/lib/projectStorage.ts
 import {
   Project,
   CreateProjectInput,
@@ -180,6 +179,7 @@ export const loadProjects = async (): Promise<Project[]> => {
         const cloudProjects = data.map((p) => ({
           ...p,
           shortCode: p.short_code,
+          projectType: p.project_type || "web",
           techStack: p.tech_stack,
           targetUsers: p.target_users,
           documentVersion: p.document_version,
@@ -333,6 +333,7 @@ const syncLocalProjectsToCloud = async (projects: Project[]) => {
           user_id: userId,
           name: project.name,
           short_code: project.shortCode,
+          project_type: project.projectType || "web",
           description: project.description,
           tech_stack: project.techStack,
           target_users: project.targetUsers,
@@ -486,6 +487,7 @@ export const createProject = async (
     name: input.name,
     shortCode: input.shortCode.toUpperCase(),
     description: input.description,
+    projectType: input.projectType || "web",
     techStack: input.techStack,
     targetUsers: input.targetUsers,
     documentVersion: input.documentVersion || "1.0",
@@ -514,6 +516,7 @@ export const createProject = async (
             name: newProject.name,
             short_code: newProject.shortCode,
             description: newProject.description,
+            project_type: newProject.projectType,
             tech_stack: newProject.techStack,
             target_users: newProject.targetUsers,
             document_version: newProject.documentVersion,
@@ -571,6 +574,7 @@ export const updateProject = async (
           name: updatedProject.name,
           short_code: updatedProject.shortCode,
           description: updatedProject.description,
+          project_type: updatedProject.projectType,
           tech_stack: updatedProject.techStack,
           target_users: updatedProject.targetUsers,
           document_version: updatedProject.documentVersion,

@@ -6,6 +6,8 @@ export type ProjectPhase =
   | "uat"
   | "completed";
 
+export type ProjectType = "web" | "mobile";
+
 import { TestObjective, TestEnvironment } from "./test-case";
 
 export interface Project {
@@ -13,6 +15,7 @@ export interface Project {
   name: string;
   shortCode: string; // e.g., "CBP", "WMA"
   description: string;
+  projectType: ProjectType;
   techStack: string[];
   targetUsers: string[];
   documentVersion: string;
@@ -62,6 +65,7 @@ export interface CreateProjectInput {
   name: string;
   shortCode: string;
   description: string;
+  projectType: ProjectType;
   techStack: string[];
   targetUsers: string[];
   documentVersion?: string;
@@ -74,11 +78,12 @@ export interface UpdateProjectInput {
   name?: string;
   shortCode?: string;
   description?: string;
+  projectType?: ProjectType;
   techStack?: string[];
   targetUsers?: string[];
-  documentVersion?: string;
   status?: ProjectStatus;
   phase?: ProjectPhase;
   color?: string;
   icon?: string;
+  documentVersion?: string;
 }

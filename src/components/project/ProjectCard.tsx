@@ -64,14 +64,27 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         />
         <CardHeader className="pb-4">
           <div className="flex justify-between items-start mb-2">
-            <div
-              className="p-2 rounded-lg"
-              style={{
-                backgroundColor: `${project.color}15`,
-                color: project.color,
-              }}
-            >
-              <Icon size={20} />
+            <div className="flex gap-2">
+              <div
+                className="p-2 rounded-lg"
+                style={{
+                  backgroundColor: `${project.color}15`,
+                  color: project.color,
+                }}
+              >
+                <Icon size={20} />
+              </div>
+              <Badge
+                variant="outline"
+                className="text-[9px] uppercase font-black px-1.5 py-0 border-none bg-gray-100 text-gray-500 h-5 flex items-center gap-1 self-center"
+              >
+                {project.projectType === "mobile" ? (
+                  <Smartphone size={10} strokeWidth={3} />
+                ) : (
+                  <Monitor size={10} strokeWidth={3} />
+                )}
+                {project.projectType === "mobile" ? "Mobile" : "Web"}
+              </Badge>
             </div>
             <Badge
               variant="outline"

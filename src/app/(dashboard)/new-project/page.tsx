@@ -18,6 +18,8 @@ import {
   Palette,
   CheckCircle2,
   Rocket,
+  Globe,
+  Smartphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Project } from "@/types/project";
@@ -52,6 +54,7 @@ export default function NewProjectPage() {
     name: "",
     shortCode: "",
     description: "",
+    projectType: "web",
     status: "active",
     phase: "planning",
     documentVersion: "1.0",
@@ -118,6 +121,7 @@ export default function NewProjectPage() {
         name: formData.name,
         shortCode: formData.shortCode.toUpperCase(),
         description: formData.description || "",
+        projectType: formData.projectType || "web",
         documentVersion: formData.documentVersion || "1.0",
         color: formData.color || "#6366F1",
         techStack: formData.techStack || [],
@@ -226,6 +230,44 @@ export default function NewProjectPage() {
                       placeholder="e.g. Rosabon Wealth Management App"
                       className="h-12 text-lg bg-gray-50/50 border-gray-200 focus:bg-white"
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">
+                      Project Type *
+                    </label>
+                    <div className="flex gap-4">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({ ...formData, projectType: "web" })
+                        }
+                        className={cn(
+                          "flex-1 p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 cursor-pointer",
+                          formData.projectType === "web"
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-gray-100 bg-gray-50/50 text-gray-500 hover:border-gray-200",
+                        )}
+                      >
+                        <Globe size={24} />
+                        <span className="font-bold">Web App</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({ ...formData, projectType: "mobile" })
+                        }
+                        className={cn(
+                          "flex-1 p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 cursor-pointer",
+                          formData.projectType === "mobile"
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-gray-100 bg-gray-50/50 text-gray-500 hover:border-gray-200",
+                        )}
+                      >
+                        <Smartphone size={24} />
+                        <span className="font-bold">Mobile App</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">

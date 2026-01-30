@@ -4,8 +4,6 @@ import { ProjectWithStats } from "@/types/project";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
-  CheckCircle2,
-  AlertCircle,
   Clock,
   ArrowRight,
   Monitor,
@@ -65,15 +63,28 @@ export default function ProjectListItem({ project }: ProjectListItemProps) {
             <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors truncate">
               {project.name}
             </h3>
-            <Badge
-              variant="outline"
-              className={cn(
-                "text-[9px] uppercase font-black px-2 py-0 w-fit mx-auto sm:mx-0",
-                statusColors[project.status],
-              )}
-            >
-              {project.status}
-            </Badge>
+            <div className="flex gap-2 items-center mx-auto sm:mx-0">
+              <Badge
+                variant="outline"
+                className="text-[9px] uppercase font-black px-1.5 py-0 border-none bg-gray-100 text-gray-400 flex items-center gap-1"
+              >
+                {project.projectType === "mobile" ? (
+                  <Smartphone size={10} strokeWidth={3} />
+                ) : (
+                  <Monitor size={10} strokeWidth={3} />
+                )}
+                {project.projectType === "mobile" ? "Mobile" : "Web"}
+              </Badge>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-[9px] uppercase font-black px-2 py-0",
+                  statusColors[project.status],
+                )}
+              >
+                {project.status}
+              </Badge>
+            </div>
             <span className="text-xs font-mono text-gray-400 hidden sm:inline">
               {project.shortCode}
             </span>
@@ -97,7 +108,7 @@ export default function ProjectListItem({ project }: ProjectListItemProps) {
           />
         </div>
 
-        <div className="flex items-center gap-4 shrink-0 px-4 border-l border-gray-100 hidden md:flex">
+        <div className="hidden md:flex items-center gap-4 shrink-0 px-4 border-l border-gray-100">
           <div className="flex flex-col items-center">
             <span className="text-[10px] font-bold uppercase text-gray-400">
               Passed

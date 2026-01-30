@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,8 +12,16 @@ import { isSupabaseEnabled } from "@/lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn, demoLogin, isLoading } = useAuth();
+  const { signIn, demoLogin, isLoading, isAuthenticated } = useAuth();
   const [email, setEmail] = useState("");
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, isLoading, router]);
+
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");

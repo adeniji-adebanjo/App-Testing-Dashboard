@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useProject } from "@/context/ProjectContext";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -33,6 +33,8 @@ import {
   Users,
   Code,
   Shield,
+  Globe,
+  Smartphone,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -55,7 +57,6 @@ const PROJECT_COLORS = [
 
 export default function ProjectSettingsPage() {
   const { currentProject, updateProject, deleteProject } = useProject();
-  const { projectId } = useParams();
   const router = useRouter();
 
   const [formData, setFormData] = useState<Partial<Project>>({});
@@ -74,6 +75,7 @@ export default function ProjectSettingsPage() {
         phase: currentProject.phase,
         status: currentProject.status,
         documentVersion: currentProject.documentVersion,
+        projectType: currentProject.projectType,
         color: currentProject.color,
         techStack: currentProject.techStack,
         targetUsers: currentProject.targetUsers,
@@ -251,6 +253,44 @@ export default function ProjectSettingsPage() {
                   rows={3}
                   className="bg-white/50 border-gray-200 focus:bg-white resize-none"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">
+                  Project Type
+                </label>
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData({ ...formData, projectType: "web" })
+                    }
+                    className={cn(
+                      "flex-1 p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 cursor-pointer",
+                      formData.projectType === "web"
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-gray-100 bg-gray-50/50 text-gray-500 hover:border-gray-200",
+                    )}
+                  >
+                    <Globe size={18} />
+                    <span className="font-bold text-sm">Web App</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData({ ...formData, projectType: "mobile" })
+                    }
+                    className={cn(
+                      "flex-1 p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 cursor-pointer",
+                      formData.projectType === "mobile"
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-gray-100 bg-gray-50/50 text-gray-500 hover:border-gray-200",
+                    )}
+                  >
+                    <Smartphone size={18} />
+                    <span className="font-bold text-sm">Mobile App</span>
+                  </button>
+                </div>
               </div>
 
               <div className="grid gap-6 md:grid-cols-3">
