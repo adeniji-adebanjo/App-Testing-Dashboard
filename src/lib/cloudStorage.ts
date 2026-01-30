@@ -6,7 +6,14 @@ import {
   TestEnvironment,
   SignOff,
 } from "@/types/test-case";
+import { ProjectTab } from "@/types/project";
 import { supabase, getSessionId, isSupabaseEnabled } from "./supabase";
+import {
+  setSyncing,
+  setSynced,
+  setSyncError,
+  setOffline,
+} from "@/hooks/useCloudSyncStatus";
 
 // Fallback to localStorage if Supabase is not available
 import {
@@ -168,12 +175,18 @@ export const saveToCloud = async <T>(
   localSave(storageKey, data);
 
   if (!isSupabaseEnabled()) {
+    setOffline();
     return true; // Fallback success
   }
 
+  setSyncing();
+
   try {
     const userId = await getUserId();
-    if (!userId) return false;
+    if (!userId) {
+      setSyncError("Authentication failed");
+      return false;
+    }
 
     // Prepare payload
     interface TestDataPayload {
@@ -224,9 +237,11 @@ export const saveToCloud = async <T>(
       if (error) throw error;
     }
 
+    setSynced();
     return true;
   } catch (error) {
     console.error("Error saving to cloud:", error);
+    setSyncError(error instanceof Error ? error.message : "Cloud save failed");
     return false;
   }
 };
@@ -243,6 +258,8 @@ export const loadFromCloud = async <T>(
     return localLoad(storageKey, defaultValue);
   }
 
+  setSyncing();
+
   try {
     const userId = await getUserId();
 
@@ -257,6 +274,7 @@ export const loadFromCloud = async <T>(
 
       if (data && !error) {
         localSave(storageKey, data.data);
+        setSynced();
         return data.data as T;
       }
     }
@@ -274,40 +292,56 @@ export const loadFromCloud = async <T>(
 
       if (publicData && !publicError) {
         localSave(storageKey, publicData.data);
+        setSynced();
         return publicData.data as T;
       }
     }
 
+    setSynced();
     return localLoad(storageKey, defaultValue);
   } catch (error) {
     console.error("Error loading from cloud:", error);
+    setSyncError(error instanceof Error ? error.message : "Cloud load failed");
     return localLoad(storageKey, defaultValue);
   }
 };
 
 // Sync all data from cloud
 export const syncFromCloud = async (): Promise<boolean> => {
-  if (!isSupabaseEnabled()) return false;
+  if (!isSupabaseEnabled()) {
+    setOffline();
+    return false;
+  }
+
+  setSyncing();
 
   try {
     const userId = await getUserId();
-    if (!userId) return false;
+    if (!userId) {
+      setSyncError("Authentication failed");
+      return false;
+    }
 
     const { data, error } = await supabase!
       .from("test_data")
       .select("data_type, data")
       .eq("user_id", userId);
 
-    if (error || !data) return false;
+    if (error || !data) {
+      setSyncError(error?.message || "No data returned");
+      return false;
+    }
 
     // Save all to localStorage
     data.forEach((item) => {
       localSave(item.data_type, item.data);
     });
 
+    setSynced();
     return true;
   } catch (error) {
     console.error("Error syncing from cloud:", error);
+    setSyncError(error instanceof Error ? error.message : "Sync failed");
     return false;
   }
 };
@@ -408,20 +442,8 @@ export const loadSignOffs = async (projectId?: string): Promise<SignOff[]> => {
   return loadFromCloud<SignOff[]>(STORAGE_KEYS.SIGN_OFFS, [], projectId);
 };
 
-// Project Tabs - for customizable navigation per project
-export interface ProjectTab {
-  id: string;
-  projectId: string;
-  name: string;
-  slug: string;
-  description?: string;
-  icon?: string;
-  order: number;
-  isDefault: boolean;
-  aiGenerated: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
+// ProjectTab is imported from @/types/project and used here
+// Components can import ProjectTab directly from @/types/project
 
 export const saveProjectTabs = async (
   tabs: ProjectTab[],

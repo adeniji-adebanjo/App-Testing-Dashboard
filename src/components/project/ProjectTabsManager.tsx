@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Plus,
   Trash2,
@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useProjectTabs, useUpdateProjectTabs } from "@/hooks/useTestData";
-import { ProjectTab } from "@/lib/cloudStorage";
+import { ProjectTab } from "@/types/project";
 
 interface ProjectTabsManagerProps {
   projectId: string;
@@ -257,6 +257,32 @@ function ProjectTabsEditor({ projectId, initialTabs }: ProjectTabsEditorProps) {
 
 export function ProjectTabsManager({ projectId }: ProjectTabsManagerProps) {
   const { data: savedTabs, isLoading } = useProjectTabs(projectId);
+  const { mutate: saveTabs } = useUpdateProjectTabs(projectId);
+  const autoSaveAttemptedRef = useRef(false);
+
+  // Determine initial tabs
+  const defaultTabs = useMemo(
+    () =>
+      DEFAULT_TABS.map((tab, index) => ({
+        ...tab,
+        id: `default-tab-${index}`,
+        projectId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })),
+    [projectId],
+  );
+
+  // Auto-save default tabs if none exist
+  useEffect(() => {
+    if (!isLoading && (!savedTabs || savedTabs.length === 0)) {
+      if (autoSaveAttemptedRef.current) return;
+      autoSaveAttemptedRef.current = true;
+
+      console.log("Auto-saving default tabs for project:", projectId);
+      saveTabs(defaultTabs);
+    }
+  }, [isLoading, savedTabs, projectId, saveTabs, defaultTabs]);
 
   if (isLoading) {
     return (
@@ -272,17 +298,8 @@ export function ProjectTabsManager({ projectId }: ProjectTabsManagerProps) {
     );
   }
 
-  // Determine initial tabs: use saved tabs if available, otherwise use defaults
   const effectiveTabs =
-    savedTabs && savedTabs.length > 0
-      ? savedTabs
-      : DEFAULT_TABS.map((tab, index) => ({
-          ...tab,
-          id: `default-tab-${index}`,
-          projectId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }));
+    savedTabs && savedTabs.length > 0 ? savedTabs : defaultTabs;
 
   return (
     <ProjectTabsEditor projectId={projectId} initialTabs={effectiveTabs} />

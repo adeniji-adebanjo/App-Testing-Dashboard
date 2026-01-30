@@ -16,8 +16,8 @@ import {
   saveSignOffs,
   loadProjectTabs,
   saveProjectTabs,
-  ProjectTab,
 } from "@/lib/cloudStorage";
+import { ProjectTab } from "@/types/project";
 import {
   TestCase,
   Defect,

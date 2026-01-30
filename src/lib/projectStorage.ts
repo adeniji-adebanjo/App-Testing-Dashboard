@@ -11,6 +11,31 @@ import { DEFAULT_PROJECTS } from "@/data/projects";
 
 const PROJECTS_STORAGE_KEY = "testing_portal_projects";
 
+// Event system for sync completion notifications
+type SyncCompletionCallback = (
+  syncedProjects: { oldId: string; newId: string }[],
+) => void;
+const syncListeners: Set<SyncCompletionCallback> = new Set();
+
+export const onSyncComplete = (
+  callback: SyncCompletionCallback,
+): (() => void) => {
+  syncListeners.add(callback);
+  return () => syncListeners.delete(callback);
+};
+
+const notifySyncComplete = (
+  syncedProjects: { oldId: string; newId: string }[],
+) => {
+  syncListeners.forEach((callback) => {
+    try {
+      callback(syncedProjects);
+    } catch (err) {
+      console.error("Error in sync completion callback:", err);
+    }
+  });
+};
+
 // Helper to get authenticated user ID - prioritizes Supabase Auth user
 const getAuthUserId = async (): Promise<string | null> => {
   if (!isSupabaseEnabled()) return null;
@@ -191,8 +216,10 @@ export const loadProjects = async (): Promise<Project[]> => {
   return loadProjectsFromLocal();
 };
 
-// Helper to sync local projects (fire and forget)
+// Helper to sync local projects and notify on completion
 const syncLocalProjectsToCloud = async (projects: Project[]) => {
+  const syncedIdMappings: { oldId: string; newId: string }[] = [];
+
   try {
     const userId = await getAuthUserId();
     if (!userId) return;
@@ -271,6 +298,9 @@ const syncLocalProjectsToCloud = async (projects: Project[]) => {
         const newId = savedProject.id;
 
         console.log(`Migrating data from ${oldId} to ${newId}`);
+
+        // Track the ID mapping for notification
+        syncedIdMappings.push({ oldId, newId });
 
         // 1. Update project ID in local storage
         const pIndex = currentLocalProjects.findIndex((p) => p.id === oldId);
@@ -363,10 +393,12 @@ const syncLocalProjectsToCloud = async (projects: Project[]) => {
       saveEnvironments(allEnvironments);
       saveSignOffs(allSignOffs);
       saveProjectTabs(allTabs);
+    }
 
-      // Also trigger a cloud sync for these updated items if possible
-      // (The user will need to visit the respective pages or we rely on background sync)
-      // For now, getting them ID-aligned locally is the critical step.
+    // Notify listeners about completed sync with ID mappings
+    if (syncedIdMappings.length > 0) {
+      console.log("Notifying listeners of synced projects:", syncedIdMappings);
+      notifySyncComplete(syncedIdMappings);
     }
   } catch (err) {
     console.error("Error syncing local projects:", err);

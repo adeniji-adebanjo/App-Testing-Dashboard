@@ -25,9 +25,9 @@ import {
   LucideIcon,
 } from "lucide-react";
 import ProjectSwitcher from "@/components/project/ProjectSwitcher";
-import { useProject } from "@/context/ProjectContext";
 import { useAuth } from "@/context/AuthContext";
 import { useProjectTabs } from "@/hooks/useTestData";
+import { useCloudSyncStatus } from "@/hooks/useCloudSyncStatus";
 
 // Map icon strings to Lucide components
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -44,7 +44,6 @@ const ICON_MAP: Record<string, LucideIcon> = {
 export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const { projectId } = useParams();
-  const { currentProject } = useProject();
   const { user, isAuthenticated, signOut } = useAuth();
   const router = useRouter();
 
@@ -117,6 +116,8 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
     router.push("/");
   };
 
+  const { getStatusText, getStatusColor, getDotColor } = useCloudSyncStatus();
+
   return (
     <div className="flex h-screen w-64 flex-col bg-gray-900 text-white shadow-2xl">
       <div className="flex h-16 items-center justify-between border-b border-gray-800 px-6">
@@ -164,7 +165,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
               <div className="flex items-center">
                 <item.icon
                   className={cn(
-                    "mr-3 h-5 w-5 flex-shrink-0 transition-colors",
+                    "mr-3 h-5 w-5 shrink-0 transition-colors",
                     isActive
                       ? "text-white"
                       : "text-gray-500 group-hover:text-gray-300",
@@ -214,9 +215,14 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         )}
         <div className="mt-4 pt-4 border-t border-gray-800 flex justify-between items-center text-[10px] text-gray-500">
           <span>v2.0.0</span>
-          <div className="flex items-center gap-1 text-green-500">
-            <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
-            <span>Cloud Synced</span>
+          <div className={cn("flex items-center gap-1", getStatusColor())}>
+            <div
+              className={cn(
+                "w-1 h-1 rounded-full animate-pulse",
+                getDotColor(),
+              )}
+            />
+            <span>{getStatusText()}</span>
           </div>
         </div>
       </div>

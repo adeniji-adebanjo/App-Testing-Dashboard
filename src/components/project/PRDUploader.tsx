@@ -23,7 +23,7 @@ import {
   useUpdateObjectives,
   useUpdateProjectTabs,
 } from "@/hooks/useTestData";
-import { ProjectTab } from "@/lib/cloudStorage";
+import { ProjectTab } from "@/types/project";
 
 interface PRDUploaderProps {
   projectId: string;
@@ -117,9 +117,65 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
         throw new Error(data.error);
       }
 
+      // Validate and normalize: Ensure test case modules match tab names
+      const tabs = data.tabs || [];
+      const testCases = data.testCases || [];
+      const tabNames = tabs.map(
+        (t: GeneratedTab) => t.name?.toLowerCase() || "",
+      );
+      const tabSlugs = tabs.map(
+        (t: GeneratedTab) => t.slug?.toLowerCase() || "",
+      );
+
+      // Normalize test case modules to match tab names
+      const normalizedTestCases = testCases.map((tc: Partial<TestCase>) => {
+        const tabModule = tc.module?.toLowerCase() || "";
+
+        // Check if module already matches a tab name or slug
+        const matchesName = tabNames.includes(tabModule);
+        const matchesSlug = tabSlugs.includes(tabModule);
+
+        if (matchesName || matchesSlug) {
+          // Find the correct tab name (use proper casing)
+          const matchIndex = matchesName
+            ? tabNames.indexOf(tabModule)
+            : tabSlugs.indexOf(tabModule);
+          return {
+            ...tc,
+            module: tabs[matchIndex]?.name || tc.module,
+          };
+        }
+
+        // Try fuzzy matching - find best match based on keywords
+        const bestMatch = tabs.find((tab: GeneratedTab) => {
+          const tabName = tab.name?.toLowerCase() || "";
+          const tabSlug = tab.slug?.toLowerCase() || "";
+          // Check if module contains key parts of tab name or vice versa
+          return (
+            tabModule.includes(tabName.split(" ")[0]) ||
+            tabName.includes(tabModule.split(" ")[0]) ||
+            tabModule.includes(tabSlug.split("-")[0])
+          );
+        });
+
+        if (bestMatch) {
+          return { ...tc, module: bestMatch.name };
+        }
+
+        // Default to first tab if no match found
+        if (tabs.length > 0) {
+          console.warn(
+            `No matching tab for module "${tc.module}", defaulting to "${tabs[0].name}"`,
+          );
+          return { ...tc, module: tabs[0].name };
+        }
+
+        return tc;
+      });
+
       setResult({
-        tabs: data.tabs || [],
-        testCases: data.testCases || [],
+        tabs,
+        testCases: normalizedTestCases,
         objectives: data.objectives || [],
         analysis: data.analysis + (data.usedMock ? " (Demo Mode)" : ""),
       });
@@ -155,6 +211,8 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
     });
   };
 
+  const [isSuccess, setIsSuccess] = useState(false);
+
   const handleImport = async () => {
     if (!result) return;
 
@@ -172,7 +230,7 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
               `obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             projectId: projectId,
             description: obj.title
-              ? `${obj.title}: ${obj.description || ""} (Target: ${obj.targetValue || 100}${obj.unit || "%"})`
+              ? `**${obj.title}**\n${obj.description || ""}\n\n*Target: ${obj.targetValue || 100}${obj.unit || "%"}*`
               : obj.description || "",
             completed: false,
           }),
@@ -199,12 +257,13 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
         updateProjectTabs(tabs);
       }
 
-      // Reset state after import
+      setIsSuccess(true);
       setTimeout(() => {
+        setIsSuccess(false);
         setResult(null);
         setFile(null);
         onComplete?.();
-      }, 500);
+      }, 2000);
     } catch (error) {
       console.error("Import failed:", error);
     }
@@ -453,21 +512,38 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
             <Button
               variant="outline"
               onClick={handleReset}
+              disabled={isSaving || isSuccess}
               className="flex-1 rounded-xl cursor-pointer"
             >
               Back
             </Button>
             <Button
               onClick={handleImport}
-              disabled={isSaving || (!importTestCases && !importObjectives)}
-              className="flex-1 rounded-xl bg-primary shadow-lg shadow-primary/20 gap-2 cursor-pointer"
+              disabled={
+                isSaving ||
+                isSuccess ||
+                (!importTestCases && !importObjectives && !importTabs)
+              }
+              className={cn(
+                "flex-1 rounded-xl gap-2 cursor-pointer transition-all duration-300",
+                isSuccess
+                  ? "bg-green-600 hover:bg-green-600 shadow-lg shadow-green-200"
+                  : "bg-primary shadow-lg shadow-primary/20",
+              )}
             >
               {isSaving ? (
                 <Loader2 size={16} className="animate-spin" />
+              ) : isSuccess ? (
+                <>
+                  <Check size={16} />
+                  Imported!
+                </>
               ) : (
-                <Check size={16} />
+                <>
+                  <Check size={16} />
+                  Import Selected
+                </>
               )}
-              Import Selected
             </Button>
           </div>
         </div>

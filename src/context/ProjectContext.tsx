@@ -17,6 +17,7 @@ import {
   createProject as createProjectStorage,
   updateProject as updateProjectStorage,
   deleteProject as deleteProjectStorage,
+  onSyncComplete,
 } from "@/lib/projectStorage";
 import { CreateProjectInput, UpdateProjectInput } from "@/types/project";
 
@@ -162,6 +163,40 @@ export function ProjectProvider({
 
     init();
   }, [initialProjectId, loadProjectsInternal]);
+
+  // Listen for cloud sync completion and refresh data
+  useEffect(() => {
+    const unsubscribe = onSyncComplete((syncedProjects) => {
+      console.log(
+        "Cloud sync completed, refreshing projects...",
+        syncedProjects,
+      );
+
+      // Refresh all projects
+      loadProjectsInternal().then((loadedProjects) => {
+        // If current project ID was changed, update the reference
+        if (currentProject) {
+          const mapping = syncedProjects.find(
+            (m) => m.oldId === currentProject.id,
+          );
+          if (mapping) {
+            const updatedProject = loadedProjects.find(
+              (p) => p.id === mapping.newId,
+            );
+            if (updatedProject) {
+              setCurrentProject(updatedProject);
+              // Update localStorage with new ID
+              if (typeof window !== "undefined") {
+                localStorage.setItem("current_project_id", mapping.newId);
+              }
+            }
+          }
+        }
+      });
+    });
+
+    return unsubscribe;
+  }, [currentProject, loadProjectsInternal]);
 
   // Update stats when current project changes
   useEffect(() => {
