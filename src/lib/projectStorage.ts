@@ -63,14 +63,18 @@ const getAuthUserId = async (): Promise<string | null> => {
   }
 };
 
-// Generate a unique project ID
-const generateProjectId = (name: string): string => {
-  const slug = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-  const timestamp = Date.now().toString(36);
-  return `${slug}-${timestamp}`;
+// Generate a unique project ID using UUID for consistency with Supabase
+const generateProjectId = (): string => {
+  // Use crypto.randomUUID() for browser environments (modern browsers)
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older environments
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 };
 
 // Local storage helpers
@@ -364,6 +368,7 @@ const syncLocalProjectsToCloud = async (projects: Project[]) => {
           status: project.status,
           phase: project.phase,
           color: project.color,
+          icon: project.icon,
         })
         .select()
         .single();
@@ -506,7 +511,7 @@ export const createProject = async (
   }
 
   const newProject: Project = {
-    id: generateProjectId(input.name), // Note: This is still a slug, DB will generate a separate UUID PK
+    id: generateProjectId(), // Now uses UUID for consistency with Supabase
     name: input.name,
     shortCode: input.shortCode.toUpperCase(),
     description: input.description,
@@ -535,6 +540,7 @@ export const createProject = async (
         const { data: savedProject, error } = await supabase!
           .from("projects")
           .insert({
+            id: newProject.id, // Use client-generated UUID
             user_id: userId,
             name: newProject.name,
             short_code: newProject.shortCode,
@@ -546,6 +552,7 @@ export const createProject = async (
             status: newProject.status,
             phase: newProject.phase,
             color: newProject.color,
+            icon: newProject.icon,
           })
           .select()
           .single();
@@ -625,6 +632,7 @@ export const updateProject = async (
           status: updatedProject.status,
           phase: updatedProject.phase,
           color: updatedProject.color,
+          icon: updatedProject.icon,
         })
         .eq("id", targetId);
 

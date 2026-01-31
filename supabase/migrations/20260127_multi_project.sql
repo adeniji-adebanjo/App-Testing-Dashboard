@@ -39,6 +39,77 @@ BEGIN
 END;
 $$;
 
+-- 1.2 Ensure icon column exists (for project icons)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'projects'
+      AND column_name = 'icon'
+  ) THEN
+    ALTER TABLE public.projects
+      ADD COLUMN icon text;
+  END IF;
+END;
+$$;
+
+-- 1.3 Create project_tabs table for better relational management of tabs
+CREATE TABLE IF NOT EXISTS public.project_tabs (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_id uuid REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
+  name text NOT NULL,
+  slug text NOT NULL,
+  description text,
+  icon text,
+  "order" integer DEFAULT 0,
+  is_default boolean DEFAULT false,
+  ai_generated boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 1.4 Create index on project_tabs for faster lookups
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_class t
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    JOIN pg_index i ON i.indrelid = t.oid
+    JOIN pg_class ix ON ix.oid = i.indexrelid
+    WHERE n.nspname = 'public'
+      AND t.relname = 'project_tabs'
+      AND ix.relname = 'idx_project_tabs_project_id'
+  ) THEN
+    CREATE INDEX idx_project_tabs_project_id ON public.project_tabs(project_id);
+  END IF;
+END;
+$$;
+
+-- 1.5 Enable RLS and add policy for project_tabs
+ALTER TABLE public.project_tabs ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies p
+    WHERE p.schemaname = 'public'
+      AND p.tablename  = 'project_tabs'
+      AND p.policyname = 'Allow public all access to project_tabs'
+  ) THEN
+    CREATE POLICY "Allow public all access to project_tabs"
+      ON public.project_tabs
+      FOR ALL
+      TO public
+      USING (true)
+      WITH CHECK (true);
+  END IF;
+END;
+$$;
+
 -- 2. Add project_id column to test_data for better indexing and isolation
 DO $$
 BEGIN
@@ -140,6 +211,23 @@ BEGIN
   ) THEN
     CREATE TRIGGER set_test_data_updated_at
       BEFORE UPDATE ON public.test_data
+      FOR EACH ROW
+      EXECUTE FUNCTION public.handle_updated_at();
+END;
+$$;
+
+-- project_tabs trigger
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.triggers
+    WHERE event_object_schema = 'public'
+      AND event_object_table = 'project_tabs'
+      AND trigger_name = 'set_project_tabs_updated_at'
+  ) THEN
+    CREATE TRIGGER set_project_tabs_updated_at
+      BEFORE UPDATE ON public.project_tabs
       FOR EACH ROW
       EXECUTE FUNCTION public.handle_updated_at();
   END IF;

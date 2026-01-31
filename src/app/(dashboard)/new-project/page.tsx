@@ -20,6 +20,7 @@ import {
   Rocket,
   Globe,
   Smartphone,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Project } from "@/types/project";
@@ -49,6 +50,7 @@ export default function NewProjectPage() {
   const { createProject } = useProject();
   const [currentStep, setCurrentStep] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<Partial<Project>>({
     name: "",
@@ -116,6 +118,7 @@ export default function NewProjectPage() {
     if (!formData.name || !formData.shortCode) return;
 
     setIsCreating(true);
+    setError(null);
     try {
       const newProject = await createProject({
         name: formData.name,
@@ -128,8 +131,13 @@ export default function NewProjectPage() {
         targetUsers: formData.targetUsers || [],
       });
       router.push(`/projects/${newProject.id}`);
-    } catch (error) {
-      console.error("Failed to create project:", error);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to create project. Please try again.";
+      setError(message);
+      console.error("Failed to create project:", err);
     } finally {
       setIsCreating(false);
     }
@@ -272,9 +280,14 @@ export default function NewProjectPage() {
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">
-                        Short Code *
-                      </label>
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">
+                          Short Code *
+                        </label>
+                        <span className="text-[10px] font-medium text-gray-400">
+                          {(formData.shortCode || "").length}/5
+                        </span>
+                      </div>
                       <Input
                         value={formData.shortCode || ""}
                         onChange={(e) =>
@@ -572,6 +585,14 @@ export default function NewProjectPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className="flex items-center gap-2 p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium mt-6">
+                <AlertCircle size={18} />
+                <span>{error}</span>
               </div>
             )}
 

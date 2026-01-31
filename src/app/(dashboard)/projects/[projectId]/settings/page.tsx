@@ -169,30 +169,20 @@ export default function ProjectSettingsPage() {
         </div>
         <div className="flex flex-col items-end gap-3">
           <SyncStatusBadge />
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteConfirm(true)}
-              className="gap-2 text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
-            >
-              <Trash2 size={16} />
-              Delete Project
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="gap-2 bg-primary shadow-lg shadow-primary/20"
-            >
-              {isSaving ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : saveSuccess ? (
-                <CheckCircle2 size={16} />
-              ) : (
-                <Save size={16} />
-              )}
-              {saveSuccess ? "Saved!" : "Save Changes"}
-            </Button>
-          </div>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="gap-2 bg-primary shadow-lg shadow-primary/20"
+          >
+            {isSaving ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : saveSuccess ? (
+              <CheckCircle2 size={16} />
+            ) : (
+              <Save size={16} />
+            )}
+            {saveSuccess ? "Saved!" : "Save Changes"}
+          </Button>
         </div>
       </div>
 
@@ -226,9 +216,14 @@ export default function ProjectSettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">
-                    Short Code
-                  </label>
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">
+                      Short Code
+                    </label>
+                    <span className="text-[10px] font-medium text-gray-400">
+                      {(formData.shortCode || "").length}/5
+                    </span>
+                  </div>
                   <Input
                     value={formData.shortCode || ""}
                     onChange={(e) =>
@@ -305,7 +300,7 @@ export default function ProjectSettingsPage() {
                   <Select
                     value={formData.status || "active"}
                     onValueChange={(
-                      value: "active" | "completed" | "on-hold",
+                      value: "active" | "completed" | "on-hold" | "archived",
                     ) => setFormData({ ...formData, status: value })}
                   >
                     <SelectTrigger className="bg-white/50 border-gray-200">
@@ -315,6 +310,7 @@ export default function ProjectSettingsPage() {
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="on-hold">On Hold</SelectItem>
+                      <SelectItem value="archived">Archived</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
