@@ -41,6 +41,7 @@ import { cn } from "@/lib/utils";
 import { Project } from "@/types/project";
 import { PRDUploader } from "@/components/project/PRDUploader";
 import { ProjectTabsManager } from "@/components/project/ProjectTabsManager";
+import { SyncStatusBadge } from "@/components/layout/SyncStatusBadge";
 
 const PROJECT_COLORS = [
   "#6366F1", // Indigo
@@ -166,29 +167,32 @@ export default function ProjectSettingsPage() {
             Manage project metadata, team settings, and configurations
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setShowDeleteConfirm(true)}
-            className="gap-2 text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
-          >
-            <Trash2 size={16} />
-            Delete Project
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="gap-2 bg-primary shadow-lg shadow-primary/20"
-          >
-            {isSaving ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : saveSuccess ? (
-              <CheckCircle2 size={16} />
-            ) : (
-              <Save size={16} />
-            )}
-            {saveSuccess ? "Saved!" : "Save Changes"}
-          </Button>
+        <div className="flex flex-col items-end gap-3">
+          <SyncStatusBadge />
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="gap-2 text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+            >
+              <Trash2 size={16} />
+              Delete Project
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="gap-2 bg-primary shadow-lg shadow-primary/20"
+            >
+              {isSaving ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : saveSuccess ? (
+                <CheckCircle2 size={16} />
+              ) : (
+                <Save size={16} />
+              )}
+              {saveSuccess ? "Saved!" : "Save Changes"}
+            </Button>
+          </div>
         </div>
       </div>
 

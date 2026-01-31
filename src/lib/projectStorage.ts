@@ -7,6 +7,7 @@ import {
 } from "@/types/project";
 import { supabase, getSessionId, isSupabaseEnabled } from "./supabase";
 import { DEFAULT_PROJECTS } from "@/data/projects";
+import { setSynced, setSyncError } from "@/hooks/useCloudSyncStatus";
 
 const PROJECTS_STORAGE_KEY = "testing_portal_projects";
 
@@ -87,13 +88,34 @@ const loadProjectsFromLocal = (): Project[] => {
   try {
     const stored = localStorage.getItem(PROJECTS_STORAGE_KEY);
     if (stored) {
-      const parsed = JSON.parse(stored);
-      // Merge with default projects to ensure they always exist
+      const parsed = JSON.parse(stored) as Project[];
+
+      // Ensure dates are converted back to Date objects
+      const sanitized = parsed.map((p) => ({
+        ...p,
+        createdAt: p.createdAt ? new Date(p.createdAt) : new Date(),
+        updatedAt: p.updatedAt ? new Date(p.updatedAt) : new Date(),
+      }));
+
+      // Merge with default projects: use stored version if it exists, otherwise use hardcoded default
       const defaultIds = DEFAULT_PROJECTS.map((p) => p.id);
-      const customProjects = parsed.filter(
-        (p: Project) => !defaultIds.includes(p.id),
+
+      // Projects that are NOT in DEFAULT_PROJECTS and are in storage
+      const customProjects = sanitized.filter(
+        (p) => !defaultIds.includes(p.id),
       );
-      return [...DEFAULT_PROJECTS, ...customProjects];
+
+      // For each default project, check if it's in storage.
+      // If yes, use the storage version merged with default (to ensure new fields exist)
+      const defaultProjectsMerged = DEFAULT_PROJECTS.map((dp) => {
+        const storedVersion = sanitized.find((p) => p.id === dp.id);
+        if (storedVersion) {
+          return { ...dp, ...storedVersion };
+        }
+        return dp;
+      });
+
+      return [...defaultProjectsMerged, ...customProjects];
     }
     return DEFAULT_PROJECTS;
   } catch (error) {
@@ -563,12 +585,33 @@ export const updateProject = async (
 
   projects[index] = updatedProject;
   saveProjectsToLocal(projects);
-
   // Sync to Cloud
   if (isSupabaseEnabled()) {
     try {
-      // If projectId is a UUID, use it directly
-      await supabase!
+      // If projectId is a UUID, use it directly.
+      // If it looks like a slug (e.g. 'credit-bureau-portal'), we need to find the UUID.
+      let targetId = projectId;
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          projectId,
+        );
+
+      if (!isUuid) {
+        // Try to find matching project by shortCode or name in cloud to get the real ID
+        const { data: matches } = await supabase!
+          .from("projects")
+          .select("id")
+          .or(
+            `short_code.eq.${updatedProject.shortCode},name.eq.${updatedProject.name}`,
+          )
+          .limit(1);
+
+        if (matches && matches.length > 0) {
+          targetId = matches[0].id;
+        }
+      }
+
+      const { error } = await supabase!
         .from("projects")
         .update({
           name: updatedProject.name,
@@ -582,9 +625,15 @@ export const updateProject = async (
           phase: updatedProject.phase,
           color: updatedProject.color,
         })
-        .eq("id", projectId); // This assumes the app is using the UUID as ID
+        .eq("id", targetId);
+
+      if (error) throw error;
+      setSynced();
     } catch (error) {
       console.warn("Could not sync update to cloud:", error);
+      setSyncError(
+        error instanceof Error ? error.message : "Cloud update failed",
+      );
     }
   }
 

@@ -15,7 +15,6 @@ export default function Breadcrumbs() {
   // Custom mapping for IDs to Names
   const getSegmentName = (segment: string, index: number) => {
     if (segment === "dashboard") return "Project Hub";
-    if (segment === "projects") return "Projects";
     if (index === 1 && currentProject && segment === currentProject.id) {
       return currentProject.shortCode;
     }
@@ -27,6 +26,14 @@ export default function Breadcrumbs() {
       .join(" ");
   };
 
+  const breadcrumbItems = segments
+    .map((segment, index) => ({
+      name: getSegmentName(segment, index),
+      href: `/${segments.slice(0, index + 1).join("/")}`,
+      id: segment,
+    }))
+    .filter((item) => item.id !== "projects");
+
   return (
     <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
       <Link
@@ -36,22 +43,20 @@ export default function Breadcrumbs() {
         <Home className="h-4 w-4" />
       </Link>
 
-      {segments.map((segment, index) => {
-        const href = `/${segments.slice(0, index + 1).join("/")}`;
-        const isLast = index === segments.length - 1;
-        const name = getSegmentName(segment, index);
+      {breadcrumbItems.map((item, index) => {
+        const isLast = index === breadcrumbItems.length - 1;
 
         return (
-          <div key={href} className="flex items-center space-x-2">
+          <div key={item.href} className="flex items-center space-x-2">
             <ChevronRight className="h-4 w-4 text-gray-300" />
             <Link
-              href={href}
+              href={item.href}
               className={cn(
                 "hover:text-primary transition-colors",
                 isLast ? "text-gray-900 font-semibold pointer-events-none" : "",
               )}
             >
-              {name}
+              {item.name}
             </Link>
           </div>
         );

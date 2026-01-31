@@ -128,9 +128,14 @@ export default function ProjectListItem({ project }: ProjectListItemProps) {
         </div>
 
         <div className="shrink-0 flex items-center gap-2">
-          <div className="hidden sm:flex items-center gap-1 text-[10px] font-bold text-gray-400 uppercase bg-gray-50 px-2 py-1 rounded-md">
-            <Clock size={12} />
-            {phaseLabels[project.phase]}
+          <div className="hidden sm:flex flex-col items-end gap-1">
+            <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400 uppercase bg-gray-50 px-2 py-1 rounded-md">
+              <Clock size={12} />
+              {phaseLabels[project.phase]}
+            </div>
+            <span className="text-[9px] text-gray-300 font-medium px-1">
+              Mutated: {new Date(project.updatedAt).toLocaleDateString()}
+            </span>
           </div>
           <div className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-primary/10 group-hover:text-primary transition-all">
             <ArrowRight size={16} />

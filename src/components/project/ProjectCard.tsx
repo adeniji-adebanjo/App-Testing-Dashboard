@@ -166,12 +166,24 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             )}
           </div>
         </CardContent>
-        <CardFooter className="pb-4 flex justify-between items-center text-xs text-gray-400 border-t border-gray-50 mt-auto pt-4">
-          <div className="flex items-center gap-1">
-            <Clock size={12} />
-            <span>Phase: {phaseLabels[project.phase]}</span>
+        <CardFooter className="pb-4 flex flex-col gap-2 border-t border-gray-50 mt-auto pt-4">
+          <div className="flex justify-between items-center w-full text-xs text-gray-400">
+            <div className="flex items-center gap-1">
+              <Clock size={12} />
+              <span>Phase: {phaseLabels[project.phase]}</span>
+            </div>
+            <span className="font-mono">{project.shortCode}</span>
           </div>
-          <span className="font-mono">{project.shortCode}</span>
+          <div className="text-[10px] text-gray-300 flex items-center gap-1 px-1">
+            <div className="w-1 h-1 rounded-full bg-gray-300" />
+            Last mutated: {new Date(
+              project.updatedAt,
+            ).toLocaleDateString()} at{" "}
+            {new Date(project.updatedAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </div>
         </CardFooter>
       </Card>
     </Link>

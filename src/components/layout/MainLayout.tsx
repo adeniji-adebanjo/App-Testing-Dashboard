@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Sidebar from "./Sidebar";
-import Header from "./Header";
+// import Header from "./Header";
 import { Menu, X } from "lucide-react";
 
 export default function MainLayout({
@@ -44,7 +44,7 @@ export default function MainLayout({
           <h2 className="text-lg font-bold text-gray-900">Testing Dashboard</h2>
         </div>
 
-        <Header />
+        {/* <Header /> */}
         <main className="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6">
           {children}
         </main>
