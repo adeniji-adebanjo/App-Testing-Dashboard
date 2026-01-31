@@ -5,7 +5,13 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, Shield, BarChart3 } from "lucide-react";
+import {
+  ExternalLink,
+  Shield,
+  BarChart3,
+  Monitor,
+  Smartphone,
+} from "lucide-react";
 import { loadProjects } from "@/lib/projectStorage";
 import { Project } from "@/types/project";
 
@@ -106,12 +112,27 @@ export default function PublicProjectsIndexPage() {
                             className="text-gray-400 group-hover:text-primary transition-colors shrink-0"
                           />
                         </div>
-                        <Badge
-                          variant="outline"
-                          className="mt-1.5 text-[9px] uppercase font-black tracking-[0.1em] border-gray-100 bg-gray-50/50"
-                        >
-                          {project.phase}
-                        </Badge>
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] uppercase font-black tracking-widest border-none bg-gray-100/80 text-gray-500 py-0.5"
+                          >
+                            {project.phase}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] uppercase font-black tracking-widest border-none bg-primary/5 text-primary py-0.5 flex items-center gap-1"
+                          >
+                            {project.projectType === "mobile" ? (
+                              <Smartphone size={10} strokeWidth={3} />
+                            ) : (
+                              <Monitor size={10} strokeWidth={3} />
+                            )}
+                            {project.projectType === "mobile"
+                              ? "Mobile"
+                              : "Web"}
+                          </Badge>
+                        </div>
                         {project.description && (
                           <p className="text-xs text-gray-500 mt-2.5 line-clamp-2 leading-relaxed font-medium">
                             {project.description}

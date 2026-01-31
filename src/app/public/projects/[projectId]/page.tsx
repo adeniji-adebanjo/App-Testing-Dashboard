@@ -18,8 +18,8 @@ import {
   AlertTriangle,
   Bug,
   Target,
-  Shield,
-  ExternalLink,
+  Monitor,
+  Smartphone,
 } from "lucide-react";
 import { loadProjects, getProjectStats } from "@/lib/projectStorage";
 import { Project, ProjectStats } from "@/types/project";
@@ -102,12 +102,25 @@ export default function PublicProjectSummaryPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8">
       {/* Project Info */}
       <div className="text-center max-w-2xl mx-auto px-2">
-        <Badge
-          variant="outline"
-          className="mb-4 text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black px-3 py-1 bg-gray-50 border-gray-100"
-        >
-          {project.phase}
-        </Badge>
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <Badge
+            variant="outline"
+            className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black px-3 py-1 bg-gray-50 border-gray-100"
+          >
+            {project.phase}
+          </Badge>
+          <Badge
+            variant="outline"
+            className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black px-3 py-1 bg-primary/5 text-primary border-none flex items-center gap-1.5"
+          >
+            {project.projectType === "mobile" ? (
+              <Smartphone size={10} strokeWidth={3} />
+            ) : (
+              <Monitor size={10} strokeWidth={3} />
+            )}
+            {project.projectType === "mobile" ? "Mobile App" : "Web Portal"}
+          </Badge>
+        </div>
         <h2 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tighter leading-tight">
           {project.name}
         </h2>

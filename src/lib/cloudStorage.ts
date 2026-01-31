@@ -263,7 +263,27 @@ export const loadFromCloud = async <T>(
   try {
     const userId = await getUserId();
 
-    // Primary strategy: Try to get data for the current authenticated user
+    // 1. If we have a projectId, we should prioritize the MOST RECENT data globally
+    // for this project, regardless of the user who saved it. This enables
+    // persistence across devices (where user/session IDs might differ).
+    if (projectId) {
+      const { data: globalData, error: globalError } = await supabase!
+        .from("test_data")
+        .select("data, user_id, updated_at")
+        .eq("data_type", storageKey)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (globalData && !globalError) {
+        // If we found data, save it locally and return it
+        localSave(storageKey, globalData.data);
+        setSynced();
+        return globalData.data as T;
+      }
+    }
+
+    // 2. Fallback to current user's specific record if not found globally or no projectId
     if (userId) {
       const { data, error } = await supabase!
         .from("test_data")
@@ -276,24 +296,6 @@ export const loadFromCloud = async <T>(
         localSave(storageKey, data.data);
         setSynced();
         return data.data as T;
-      }
-    }
-
-    // Secondary strategy: If specific to a project, try to find ANY data for this key
-    // This supports public views where the viewer is not the owner
-    if (projectId) {
-      const { data: publicData, error: publicError } = await supabase!
-        .from("test_data")
-        .select("data")
-        .eq("data_type", storageKey)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .single();
-
-      if (publicData && !publicError) {
-        localSave(storageKey, publicData.data);
-        setSynced();
-        return publicData.data as T;
       }
     }
 

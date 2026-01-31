@@ -297,39 +297,40 @@ const syncLocalProjectsToCloud = async (projects: Project[]) => {
     const userId = await getAuthUserId();
     if (!userId) return;
 
-    // Import storage helpers dynamically
+    // Load legacy data from local storage to sync it
     const {
       loadTestCases,
-      saveTestCases,
       loadDefects,
-      saveDefects,
       loadMetrics,
-      saveMetrics,
       loadObjectives,
-      saveObjectives,
       loadQualityGates,
-      saveQualityGates,
       loadEnvironments,
-      saveEnvironments,
       loadSignOffs,
-      saveSignOffs,
     } = await import("./storage");
+
+    // Save to cloud using cloudStorage
+    const {
+      saveTestCases,
+      saveDefects,
+      saveMetrics,
+      saveObjectives,
+      saveQualityGates,
+      saveEnvironments,
+      saveSignOffs,
+      saveProjectTabs: saveProjectTabsToCloud,
+    } = await import("./cloudStorage");
 
     // Import cloud storage helpers dynamically if needed,
     // but better to import at top if possible.
     // Since cloudStorage depends on projectStorage, we might have circular deps.
     // We'll use localStorage keys directly for project tabs to avoid this.
-    const PROJECT_TABS_KEY = "credit_bureau_project_tabs";
     const loadProjectTabs = () => {
       try {
-        const item = localStorage.getItem(PROJECT_TABS_KEY);
+        const item = localStorage.getItem("credit_bureau_project_tabs");
         return item ? JSON.parse(item) : [];
       } catch {
         return [];
       }
-    };
-    const saveProjectTabs = (data: ProjectTab[]) => {
-      localStorage.setItem(PROJECT_TABS_KEY, JSON.stringify(data));
     };
 
     // Load all dependent data once
@@ -466,7 +467,7 @@ const syncLocalProjectsToCloud = async (projects: Project[]) => {
       saveQualityGates(allGates);
       saveEnvironments(allEnvironments);
       saveSignOffs(allSignOffs);
-      saveProjectTabs(allTabs);
+      saveProjectTabsToCloud(allTabs);
     }
 
     // Notify listeners about completed sync with ID mappings
