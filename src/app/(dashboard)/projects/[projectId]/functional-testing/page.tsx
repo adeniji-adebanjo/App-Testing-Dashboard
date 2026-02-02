@@ -19,7 +19,13 @@ import {
   useFunctionalModuleTemplates,
 } from "@/hooks/useTestData";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ClipboardList, Filter, Settings2, Plus } from "lucide-react";
+import {
+  ClipboardList,
+  Filter,
+  Settings2,
+  Plus,
+  RefreshCw,
+} from "lucide-react";
 import { useMemo, useState, useCallback } from "react";
 import {
   Dialog,
@@ -251,6 +257,31 @@ export default function FunctionalTestingPage() {
     ],
   );
 
+  // Sync current test cases with template defaults
+  const handleSyncWithDefaults = useCallback(() => {
+    if (!functionalModules || !moduleTemplates) return;
+
+    const templateTestCases = generateTestCasesFromTemplates(
+      functionalModules,
+      moduleTemplates,
+      id,
+    );
+
+    // Only add test cases that don't exist yet (based on testCaseId and module)
+    const newCases = templateTestCases.filter(
+      (tc) =>
+        !allTestCases?.some(
+          (existing) =>
+            existing.testCaseId === tc.testCaseId &&
+            existing.module === tc.module,
+        ),
+    );
+
+    if (newCases.length > 0) {
+      updateMutation.mutate([...(allTestCases || []), ...newCases]);
+    }
+  }, [functionalModules, moduleTemplates, id, allTestCases, updateMutation]);
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -278,23 +309,35 @@ export default function FunctionalTestingPage() {
             Validate project features and business requirements
           </p>
         </div>
-        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <Settings2 className="h-4 w-4" />
-              Configure Modules
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Settings2 className="h-5 w-5" />
-                Configure Functional Testing Modules
-              </DialogTitle>
-            </DialogHeader>
-            <FunctionalModulesManager projectId={id} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSyncWithDefaults}
+            className="gap-2 text-gray-600 border-gray-200"
+            title="Add missing default scenarios from templates"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Sync Defaults
+          </Button>
+          <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Settings2 className="h-4 w-4" />
+                Configure Modules
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Settings2 className="h-5 w-5" />
+                  Configure Functional Testing Modules
+                </DialogTitle>
+              </DialogHeader>
+              <FunctionalModulesManager projectId={id} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Card className="border-none shadow-sm overflow-hidden bg-white/50 backdrop-blur-sm">

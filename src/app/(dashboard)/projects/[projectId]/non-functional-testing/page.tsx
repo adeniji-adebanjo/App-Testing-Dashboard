@@ -18,7 +18,7 @@ import {
   useNonFunctionalModuleTemplates,
 } from "@/hooks/useTestData";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Gauge, Settings2, Plus } from "lucide-react";
+import { Gauge, Settings2, Plus, RefreshCw } from "lucide-react";
 import { useMemo, useState, useCallback } from "react";
 import {
   Dialog,
@@ -242,6 +242,31 @@ export default function NonFunctionalTestingPage() {
     [activeModules, nfTemplates, testCases, id, allTestCases, updateMutation],
   );
 
+  // Sync current test cases with template defaults
+  const handleSyncWithDefaults = useCallback(() => {
+    if (!nfModules || !nfTemplates) return;
+
+    const templateTestCases = generateTestCasesFromTemplates(
+      nfModules,
+      nfTemplates,
+      id,
+    );
+
+    // Only add test cases that don't exist yet (based on testCaseId and module)
+    const newCases = templateTestCases.filter(
+      (tc) =>
+        !allTestCases?.some(
+          (existing) =>
+            existing.testCaseId === tc.testCaseId &&
+            existing.module === tc.module,
+        ),
+    );
+
+    if (newCases.length > 0) {
+      updateMutation.mutate([...(allTestCases || []), ...newCases]);
+    }
+  }, [nfModules, nfTemplates, id, allTestCases, updateMutation]);
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -269,23 +294,35 @@ export default function NonFunctionalTestingPage() {
             Assess performance, security, and usability benchmarks
           </p>
         </div>
-        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <Settings2 className="h-4 w-4" />
-              Configure Modules
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Gauge className="h-5 w-5" />
-                Configure Non-Functional Testing Modules
-              </DialogTitle>
-            </DialogHeader>
-            <NonFunctionalModulesManager projectId={id} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSyncWithDefaults}
+            className="gap-2 text-gray-600 border-gray-200"
+            title="Add missing default scenarios from templates"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Sync Defaults
+          </Button>
+          <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Settings2 className="h-4 w-4" />
+                Configure Modules
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Gauge className="h-5 w-5" />
+                  Configure Non-Functional Testing Modules
+                </DialogTitle>
+              </DialogHeader>
+              <NonFunctionalModulesManager projectId={id} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Card className="border-none shadow-sm overflow-hidden bg-white/50 backdrop-blur-sm">

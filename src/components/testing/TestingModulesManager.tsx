@@ -17,6 +17,8 @@ import {
   DEFAULT_NON_FUNCTIONAL_MODULES,
 } from "@/types/functional-module";
 import {
+  ArrowUp,
+  ArrowDown,
   Plus,
   Trash2,
   Edit,
@@ -27,6 +29,15 @@ import {
   ChevronDown,
   ChevronRight,
   Gauge,
+  Lock,
+  Search,
+  Copy,
+  Layout,
+  Shield,
+  User,
+  Monitor,
+  Database,
+  Code,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -257,6 +268,61 @@ export default function TestingModulesManager({
     });
   };
 
+  const moveModule = (moduleId: string, direction: "up" | "down") => {
+    const activeModule = localModules.find((m) => m.id === moduleId);
+    if (!activeModule) return;
+
+    const otherModules = localModules.filter((m) => m.id !== moduleId);
+    const index = localModules.indexOf(activeModule);
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+
+    if (newIndex < 0 || newIndex >= localModules.length) return;
+
+    const newModules = [...localModules];
+    newModules.splice(index, 1);
+    newModules.splice(newIndex, 0, activeModule);
+
+    // Update orders
+    const updatedModules = newModules.map((m, idx) => ({
+      ...m,
+      order: idx,
+      updatedAt: new Date(),
+    }));
+
+    setLocalModules(updatedModules);
+    setHasChanges(true);
+  };
+
+  const moveScenario = (
+    moduleId: string,
+    scenarioId: string,
+    direction: "up" | "down",
+  ) => {
+    const template = getTemplateForModule(moduleId);
+    if (!template) return;
+
+    const scenarios = [...template.defaultScenarios].sort(
+      (a, b) => a.order - b.order,
+    );
+    const activeScenario = scenarios.find((s) => s.id === scenarioId);
+    if (!activeScenario) return;
+
+    const index = scenarios.indexOf(activeScenario);
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+
+    if (newIndex < 0 || newIndex >= scenarios.length) return;
+
+    scenarios.splice(index, 1);
+    scenarios.splice(newIndex, 0, activeScenario);
+
+    const updatedScenarios = scenarios.map((s, idx) => ({
+      ...s,
+      order: idx,
+    }));
+
+    updateTemplate(moduleId, { defaultScenarios: updatedScenarios });
+  };
+
   const title =
     moduleType === "functional"
       ? "Functional Testing Modules"
@@ -268,6 +334,33 @@ export default function TestingModulesManager({
       : "Customize the modules and default test scenarios for performance, security, and other non-functional tests";
 
   const TitleIcon = moduleType === "functional" ? Settings2 : Gauge;
+
+  const renderModuleIcon = (iconName: string | undefined) => {
+    switch (iconName) {
+      case "lock":
+        return <Lock className="h-4 w-4" />;
+      case "search":
+        return <Search className="h-4 w-4" />;
+      case "copy":
+        return <Copy className="h-4 w-4" />;
+      case "api":
+        return <Database className="h-4 w-4" />;
+      case "gauge":
+        return <Gauge className="h-4 w-4" />;
+      case "shield":
+        return <Shield className="h-4 w-4" />;
+      case "user":
+        return <User className="h-4 w-4" />;
+      case "monitor":
+        return <Monitor className="h-4 w-4" />;
+      case "database":
+        return <Database className="h-4 w-4" />;
+      case "code":
+        return <Code className="h-4 w-4" />;
+      default:
+        return <Layout className="h-4 w-4" />;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -389,18 +482,21 @@ export default function TestingModulesManager({
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <CardTitle className="text-sm font-semibold">
+                          <div className="p-1.5 bg-white border border-gray-100 rounded-lg shadow-sm text-primary">
+                            {renderModuleIcon(module.icon)}
+                          </div>
+                          <CardTitle className="text-sm font-bold text-gray-900 tracking-tight">
                             {module.name}
                           </CardTitle>
                           <Badge
                             variant="outline"
-                            className="text-[10px] bg-white"
+                            className="text-[10px] bg-white text-gray-400 border-gray-100 font-medium"
                           >
                             {module.slug}
                           </Badge>
                           {module.isDefault && (
-                            <Badge className="text-[9px] bg-primary/10 text-primary border-none">
-                              Default
+                            <Badge className="text-[9px] bg-primary/5 text-primary border-none font-bold uppercase tracking-wider px-1.5 py-0">
+                              System
                             </Badge>
                           )}
                         </div>
@@ -408,6 +504,22 @@ export default function TestingModulesManager({
                     </div>
 
                     <div className="flex items-center gap-2">
+                      <div className="flex items-center border border-gray-100 rounded-lg overflow-hidden bg-white">
+                        <button
+                          onClick={() => moveModule(module.id, "up")}
+                          disabled={module.order === 0}
+                          className="p-1 hover:bg-gray-50 disabled:opacity-30 transition-colors border-r border-gray-100"
+                        >
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => moveModule(module.id, "down")}
+                          disabled={module.order === localModules.length - 1}
+                          className="p-1 hover:bg-gray-50 disabled:opacity-30 transition-colors"
+                        >
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                       <Badge variant="outline" className="text-xs">
                         {template?.defaultScenarios.length || 0} scenarios
                       </Badge>
@@ -621,6 +733,32 @@ export default function TestingModulesManager({
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-2">
+                                        <div className="flex items-center border border-gray-100 rounded md overflow-hidden bg-gray-50/50">
+                                          <button
+                                            onClick={() =>
+                                              moveScenario(
+                                                module.id,
+                                                scenario.id,
+                                                "up",
+                                              )
+                                            }
+                                            className="p-1 hover:bg-white disabled:opacity-30 transition-colors border-r border-gray-100"
+                                          >
+                                            <ArrowUp className="h-2.5 w-2.5" />
+                                          </button>
+                                          <button
+                                            onClick={() =>
+                                              moveScenario(
+                                                module.id,
+                                                scenario.id,
+                                                "down",
+                                              )
+                                            }
+                                            className="p-1 hover:bg-white disabled:opacity-30 transition-colors"
+                                          >
+                                            <ArrowDown className="h-2.5 w-2.5" />
+                                          </button>
+                                        </div>
                                         <span className="text-xs text-gray-500 max-w-[200px] truncate">
                                           → {scenario.expectedResult}
                                         </span>
