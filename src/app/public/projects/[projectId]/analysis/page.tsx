@@ -287,8 +287,11 @@ export default function PublicProjectAnalysisPage() {
           align: "center",
         },
       );
+      doc.text(`Software Tester/QA: Adebanjo Adeniji`, pageWidth / 2, 40, {
+        align: "center",
+      });
 
-      let yPos = 45;
+      let yPos = 50;
 
       // Summary stats
       const passed = testCases.filter((tc) => tc.status === "pass").length;
