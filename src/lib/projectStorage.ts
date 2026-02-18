@@ -658,15 +658,93 @@ export const deleteProject = async (projectId: string): Promise<boolean> => {
     throw new Error("Cannot delete default projects");
   }
 
+  // Find the project to ensure we have its latest details
+  const projectToDelete = projects.find((p) => p.id === projectId);
+  if (!projectToDelete) {
+    console.warn("Project not found, nothing to delete");
+    return true;
+  }
+
+  // 1. Local cleanup: Remove from projects list
   const filteredProjects = projects.filter((p) => p.id !== projectId);
   saveProjectsToLocal(filteredProjects);
 
-  // Sync to Cloud
+  // 2. Local cleanup: Remove project-specific data from localStorage
+  if (typeof window !== "undefined") {
+    const projectKeys = [
+      "credit_bureau_test_cases",
+      "credit_bureau_defects",
+      "credit_bureau_metrics",
+      "credit_bureau_objectives",
+      "credit_bureau_quality_gates",
+      "credit_bureau_environments",
+      "credit_bureau_sign_offs",
+      "credit_bureau_project_tabs",
+      "credit_bureau_functional_modules",
+      "credit_bureau_functional_module_templates",
+      "credit_bureau_non_functional_modules",
+      "credit_bureau_non_functional_module_templates",
+    ];
+    projectKeys.forEach((key) => {
+      localStorage.removeItem(`${projectId}_${key}`);
+    });
+  }
+
+  // 3. Cloud cleanup: Remove from Supabase
   if (isSupabaseEnabled()) {
     try {
-      await supabase!.from("projects").delete().eq("id", projectId);
+      // Determine the real cloud ID (handle potential slug-to-UUID mismatch)
+      let targetId = projectId;
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          projectId,
+        );
+
+      if (!isUuid) {
+        // Try to find matching project by shortCode or name in cloud to get the real ID
+        const { data: matches } = await supabase!
+          .from("projects")
+          .select("id")
+          .or(
+            `short_code.eq.${projectToDelete.shortCode},name.eq.${projectToDelete.name}`,
+          )
+          .limit(1);
+
+        if (matches && matches.length > 0) {
+          targetId = matches[0].id;
+        }
+      }
+
+      console.log(`Deleting project ${targetId} from cloud...`);
+
+      // A. Delete associated test data records from the test_data table
+      // We use both project_id column and ilike on data_type to be thorough
+      await supabase!
+        .from("test_data")
+        .delete()
+        .or(`project_id.eq.${targetId},data_type.ilike.${targetId}_%`);
+
+      // B. Delete the project itself
+      // Note: Foreign keys like functional_modules should CASCADE if set up in DB.
+      // If not, they might need manual deletion here.
+      const { error } = await supabase!
+        .from("projects")
+        .delete()
+        .eq("id", targetId);
+
+      if (error) {
+        console.error("Cloud project deletion failed:", error.message);
+        // We return true anyway because local deletion succeeded,
+        // but we log the error for diagnostics.
+        // In a strict mode, we might want to return false.
+        return true;
+      }
+
+      console.log(
+        `Cloud deletion successful for project: ${projectToDelete.name}`,
+      );
     } catch (error) {
-      console.warn("Could not sync delete to cloud:", error);
+      console.error("Error during cloud project deletion:", error);
     }
   }
 
