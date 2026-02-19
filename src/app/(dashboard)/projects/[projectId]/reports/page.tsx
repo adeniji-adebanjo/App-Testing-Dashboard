@@ -118,19 +118,20 @@ Success Metrics: ${mt.length} defined
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
             Reports & Insights
           </h1>
-          <p className="mt-2 text-gray-500">
+          <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-500">
             Generate audit-ready reports and export project data
           </p>
         </div>
         <Button
           onClick={() => window.print()}
           variant="outline"
-          className="gap-2"
+          size="sm"
+          className="w-full sm:w-auto gap-2"
         >
           <Printer size={16} />
           Print Overview
@@ -138,7 +139,7 @@ Success Metrics: ${mt.length} defined
       </div>
 
       {/* Stats Overview */}
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Total Tests" value={stats.totalTests} />
         <StatCard label="Passed" value={stats.passed} color="text-green-600" />
         <StatCard label="Failed" value={stats.failed} color="text-red-600" />
