@@ -7,11 +7,11 @@ import { Info, Target } from "lucide-react";
 export default function ProjectMetricsPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+      <div className="space-y-1 sm:space-y-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
           Success Metrics
         </h1>
-        <p className="mt-2 text-gray-500">
+        <p className="text-sm sm:text-base text-gray-500">
           Track KPIs and business objectives validation status
         </p>
       </div>
