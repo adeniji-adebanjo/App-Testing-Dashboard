@@ -362,13 +362,13 @@ export default function FunctionalTestingPage() {
             defaultValue={activeModules[0]?.slug || "auth"}
             className="w-full"
           >
-            <div className="overflow-x-auto pb-1 scrollbar-hide">
+            <div className="overflow-x-auto pb-1 mb-2 scrollbar-hide border-b border-gray-100">
               <TabsList className="inline-flex w-auto md:w-full bg-gray-100/50 p-1 h-auto gap-1 whitespace-nowrap">
                 {activeModules.map((module) => (
                   <TabsTrigger
                     key={module.id}
                     value={module.slug}
-                    className="flex-1 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm"
+                    className="flex-1 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm font-bold"
                   >
                     {module.name}
                   </TabsTrigger>
@@ -399,11 +399,13 @@ export default function FunctionalTestingPage() {
                     Add Test Case
                   </Button>
                 </div>
-                <TestCaseTable
-                  testCases={filterByModule(module.name)}
-                  onUpdate={handleUpdate}
-                  onDelete={handleDeleteTestCase}
-                />
+                <div className="max-h-[65vh] overflow-y-auto rounded-lg border border-gray-100">
+                  <TestCaseTable
+                    testCases={filterByModule(module.name)}
+                    onUpdate={handleUpdate}
+                    onDelete={handleDeleteTestCase}
+                  />
+                </div>
               </TabsContent>
             ))}
           </Tabs>

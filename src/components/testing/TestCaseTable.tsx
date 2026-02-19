@@ -282,11 +282,11 @@ export default function TestCaseTable({
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block overflow-x-auto">
+      <div className="hidden md:block">
         <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b-2 border-gray-200 bg-gray-50">
-              <th className="p-3 text-left text-sm font-bold text-gray-900">
+          <thead className="sticky top-0 z-10 bg-gray-50 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+            <tr>
+              <th className="p-3 text-left text-sm font-bold text-gray-900 first:rounded-tl-lg">
                 Test ID
               </th>
               <th className="p-3 text-left text-sm font-bold text-gray-900">
@@ -304,7 +304,7 @@ export default function TestCaseTable({
               <th className="p-3 text-left text-sm font-bold text-gray-900">
                 Comments
               </th>
-              <th className="p-3 text-left text-sm font-bold text-gray-900">
+              <th className="p-3 text-left text-sm font-bold text-gray-900 last:rounded-tr-lg">
                 Actions
               </th>
             </tr>
