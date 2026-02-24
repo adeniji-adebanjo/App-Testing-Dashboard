@@ -1,20 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  ExternalLink,
-  Shield,
-  BarChart3,
-  Monitor,
-  Smartphone,
-} from "lucide-react";
-import { loadProjects } from "@/lib/projectStorage";
-import { Project } from "@/types/project";
+import { Shield } from "lucide-react";
 
 export default function PublicProjectsIndexPage() {
   return (

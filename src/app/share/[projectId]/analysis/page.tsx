@@ -35,7 +35,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { loadProjects } from "@/lib/projectStorage";
+import { getProject } from "@/lib/projectStorage";
 import {
   loadTestCases,
   loadDefects,
@@ -219,8 +219,7 @@ export default function PrivateShareAnalysisPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const projects = await loadProjects();
-        const foundProject = projects.find((p) => p.id === id);
+        const foundProject = await getProject(id);
 
         if (!foundProject) {
           setError("Project not found");

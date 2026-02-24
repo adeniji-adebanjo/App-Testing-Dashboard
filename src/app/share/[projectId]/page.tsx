@@ -25,7 +25,7 @@ import {
   Shield,
   Globe,
 } from "lucide-react";
-import { loadProjects, getProjectStats } from "@/lib/projectStorage";
+import { getProject, getProjectStats } from "@/lib/projectStorage";
 import { Project, ProjectStats } from "@/types/project";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -42,8 +42,8 @@ export default function PrivateShareSummaryPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const projects = await loadProjects();
-        const foundProject = projects.find((p) => p.id === id);
+        // Fetch specific project directly - works for guests
+        const foundProject = await getProject(id);
 
         if (!foundProject) {
           setError("Project not found or private link expired");
