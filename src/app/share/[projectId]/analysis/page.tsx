@@ -201,7 +201,7 @@ function CollapsibleSection({
   );
 }
 
-export default function PublicProjectAnalysisPage() {
+export default function PrivateShareAnalysisPage() {
   const { projectId } = useParams();
   const router = useRouter();
   const id = projectId as string;
@@ -259,21 +259,18 @@ export default function PublicProjectAnalysisPage() {
     setIsExporting(true);
 
     try {
-      // Dynamic import for client-side only
       const jsPDF = (await import("jspdf")).default;
       const autoTable = (await import("jspdf-autotable")).default;
 
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
 
-      // Title
       doc.setFontSize(20);
       doc.setFont("helvetica", "bold");
       doc.text(`${project.name} - Test Analysis Report`, pageWidth / 2, 20, {
         align: "center",
       });
 
-      // Project info
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, 28, {
@@ -293,7 +290,6 @@ export default function PublicProjectAnalysisPage() {
 
       let yPos = 50;
 
-      // Summary stats
       const passed = testCases.filter((tc) => tc.status === "pass").length;
       const failed = testCases.filter((tc) => tc.status === "fail").length;
       const pending = testCases.filter((tc) => tc.status === "pending").length;
@@ -325,7 +321,6 @@ export default function PublicProjectAnalysisPage() {
       );
       yPos += 15;
 
-      // Test Cases Table
       if (testCases.length > 0) {
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
@@ -355,13 +350,11 @@ export default function PublicProjectAnalysisPage() {
         yPos = doc.lastAutoTable.finalY + 15;
       }
 
-      // Add new page if needed
       if (yPos > 250) {
         doc.addPage();
         yPos = 20;
       }
 
-      // Defects Table
       if (defects.length > 0) {
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
@@ -395,7 +388,6 @@ export default function PublicProjectAnalysisPage() {
         });
       }
 
-      // Save the PDF
       doc.save(`${project.shortCode}_Test_Analysis_Report.pdf`);
     } catch (err) {
       console.error("Failed to export PDF:", err);
@@ -432,10 +424,6 @@ export default function PublicProjectAnalysisPage() {
             <h2 className="text-xl font-bold text-gray-900 mb-2">
               {error || "Project Not Found"}
             </h2>
-            <p className="text-gray-500 text-sm">
-              The project you&apos;re looking for doesn&apos;t exist or has been
-              removed.
-            </p>
             <Button
               variant="outline"
               className="mt-6"
@@ -449,7 +437,6 @@ export default function PublicProjectAnalysisPage() {
     );
   }
 
-  // Calculate stats
   const passed = testCases.filter((tc) => tc.status === "pass").length;
   const failed = testCases.filter((tc) => tc.status === "fail").length;
   const pending = testCases.filter((tc) => tc.status === "pending").length;
@@ -463,7 +450,6 @@ export default function PublicProjectAnalysisPage() {
     (d) => d.severity === "critical",
   ).length;
 
-  // Group test cases by module
   const testCasesByModule = testCases.reduce(
     (acc, tc) => {
       const moduleName = tc.module || "Uncategorized";
@@ -476,13 +462,12 @@ export default function PublicProjectAnalysisPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
       <header className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Link
-                href={`/public/projects/${id}`}
+                href={`/share/${id}`}
                 className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <ArrowLeft size={20} className="text-gray-600" />
@@ -494,7 +479,7 @@ export default function PublicProjectAnalysisPage() {
                     className="text-[9px] uppercase font-black bg-primary/5 text-primary border-none gap-1"
                   >
                     <Shield size={10} />
-                    Detailed Analysis
+                    Private Analysis
                   </Badge>
                 </div>
                 <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight mt-1">
@@ -518,7 +503,6 @@ export default function PublicProjectAnalysisPage() {
         className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6"
         ref={reportRef}
       >
-        {/* Project Overview */}
         <Card className="border-none shadow-lg overflow-hidden">
           <div
             className="h-2 w-full"
@@ -598,7 +582,6 @@ export default function PublicProjectAnalysisPage() {
           </CardContent>
         </Card>
 
-        {/* Execution Summary */}
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
           <StatCard
             label="Passed"
@@ -630,7 +613,6 @@ export default function PublicProjectAnalysisPage() {
           />
         </div>
 
-        {/* Test Cases by Module */}
         <CollapsibleSection
           title="Test Cases"
           description="Detailed breakdown of all test cases by module"
@@ -709,14 +691,10 @@ export default function PublicProjectAnalysisPage() {
               <p className="text-gray-500 font-medium">
                 No test cases recorded
               </p>
-              <p className="text-gray-400 text-sm">
-                Test cases will appear here once added
-              </p>
             </div>
           )}
         </CollapsibleSection>
 
-        {/* Defects */}
         <CollapsibleSection
           title="Defects & Issues"
           description="All reported bugs and issues for this project"
@@ -765,11 +743,6 @@ export default function PublicProjectAnalysisPage() {
                         <p className="font-medium text-gray-900">
                           {defect.description}
                         </p>
-                        {defect.stepsToReproduce && (
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                            Steps: {defect.stepsToReproduce}
-                          </p>
-                        )}
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={defect.status} />
@@ -786,143 +759,21 @@ export default function PublicProjectAnalysisPage() {
             <div className="p-12 text-center">
               <Bug className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500 font-medium">No defects reported</p>
-              <p className="text-gray-400 text-sm">
-                Great job! No issues have been logged.
-              </p>
             </div>
           )}
         </CollapsibleSection>
 
-        {/* Test Objectives */}
-        {objectives.length > 0 && (
-          <CollapsibleSection
-            title="Test Objectives"
-            description="Goals and objectives for this testing phase"
-            icon={<CheckCircle2 size={18} />}
-            count={objectives.length}
-            defaultOpen={false}
-          >
-            <div className="p-6 space-y-3">
-              {objectives.map((obj) => (
-                <div
-                  key={obj.id}
-                  className={cn(
-                    "flex items-start gap-3 p-4 rounded-xl border",
-                    obj.completed
-                      ? "bg-green-50/50 border-green-100"
-                      : "bg-gray-50/50 border-gray-100",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "p-1 rounded-full shrink-0 mt-0.5",
-                      obj.completed
-                        ? "bg-green-500 text-white"
-                        : "bg-gray-300 text-white",
-                    )}
-                  >
-                    <CheckCircle2 size={14} />
-                  </div>
-                  <p
-                    className={cn(
-                      "text-sm",
-                      obj.completed ? "text-gray-700" : "text-gray-600",
-                    )}
-                  >
-                    {obj.description}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </CollapsibleSection>
-        )}
-
-        {/* Test Environment */}
-        {environments.length > 0 && (
-          <CollapsibleSection
-            title="Test Environment"
-            description="Configuration and setup for testing"
-            icon={<Monitor size={18} />}
-            count={environments.length}
-            defaultOpen={false}
-          >
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-50/50">
-                    <TableHead className="text-xs font-bold">
-                      Component
-                    </TableHead>
-                    <TableHead className="text-xs font-bold">Details</TableHead>
-                    <TableHead className="w-[100px] text-xs font-bold">
-                      Status
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {environments.map((env, index) => (
-                    <TableRow
-                      key={env.id || index}
-                      className="hover:bg-gray-50/50"
-                    >
-                      <TableCell className="font-medium text-sm text-gray-900">
-                        {env.component}
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {env.details}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[10px] uppercase font-bold",
-                            env.status === "ready"
-                              ? "bg-green-100 text-green-700 border-green-200"
-                              : "bg-amber-100 text-amber-700 border-amber-200",
-                          )}
-                        >
-                          {env.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CollapsibleSection>
-        )}
-
         {/* Footer */}
-        <div className="text-center pt-12 border-t border-gray-100 pb-8">
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-5">
-            Public QA Analysis Report • Generated{" "}
-            {new Date().toLocaleDateString()}
+        <div className="text-center pt-12 border-t border-gray-100 pb-12 mb-8">
+          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">
+            Private QA Analysis • {new Date().toLocaleDateString()}
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href={`/public/projects/${id}`}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-200 text-xs font-black uppercase tracking-widest text-gray-600 hover:bg-gray-50 transition-all"
-            >
-              <ArrowLeft size={14} />
-              Back to Summary
-            </Link>
-            <Button
-              onClick={handleExportPDF}
-              disabled={isExporting}
-              variant="default"
-              className="gap-2 shadow-lg shadow-primary/20"
-            >
-              <Download size={14} />
-              {isExporting ? "Generating..." : "Download PDF Report"}
-            </Button>
-          </div>
         </div>
       </main>
     </div>
   );
 }
 
-// Stat card component
 function StatCard({
   label,
   value,
@@ -942,24 +793,21 @@ function StatCard({
     green: "bg-green-50 text-green-600 border-green-100",
     red: "bg-red-50 text-red-600 border-red-100",
     amber: "bg-amber-50 text-amber-600 border-amber-100",
-    gray: "bg-gray-100 text-gray-600 border-gray-200",
+    gray: "bg-gray-50 text-gray-600 border-gray-100",
   };
 
   return (
-    <Card className="border-none shadow-md overflow-hidden">
-      <CardContent className="p-4 sm:p-5">
-        <div className={cn("p-2 rounded-lg w-fit border", colorClasses[color])}>
+    <Card className="border-none shadow-md overflow-hidden bg-white/80">
+      <CardContent className="p-4 sm:p-5 text-center">
+        <div
+          className={cn("inline-flex p-2 rounded-lg mb-2", colorClasses[color])}
+        >
           {icon}
         </div>
-        <p className="text-2xl sm:text-3xl font-black text-gray-900 mt-3 tracking-tighter">
-          {value}
+        <p className="text-2xl font-black text-gray-900">{value}</p>
+        <p className="text-[10px] uppercase font-bold text-gray-400 mt-1">
+          {label} ({percentage}%)
         </p>
-        <div className="flex items-center justify-between mt-1">
-          <p className="text-[10px] uppercase font-bold text-gray-400">
-            {label}
-          </p>
-          <p className="text-[10px] font-bold text-gray-400">{percentage}%</p>
-        </div>
       </CardContent>
     </Card>
   );
