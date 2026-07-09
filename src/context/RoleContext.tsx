@@ -4,7 +4,6 @@ import React, {
   createContext,
   useContext,
   useState,
-  useEffect,
   useCallback,
 } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -24,21 +23,29 @@ function storageKey(email: string | undefined): string {
   return `${STORAGE_PREFIX}${email || "anonymous"}`;
 }
 
+function readStoredRole(email: string | undefined): Role | null {
+  if (typeof window === "undefined") return null;
+  return (window.localStorage.getItem(storageKey(email)) as Role) || null;
+}
+
 export function RoleProvider({ children }: { children: React.ReactNode }) {
   const { user, isExecutive } = useAuth();
   // Executives default to Management; everyone else defaults to QA Engineer.
-  const [role, setRoleState] = useState<Role>(isExecutive ? "management" : "qa");
+  const defaultRole: Role = isExecutive ? "management" : "qa";
 
-  // Load persisted role for the current user when auth resolves.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem(storageKey(user?.email));
-    if (stored) {
-      setRoleState(stored as Role);
-    } else {
-      setRoleState(isExecutive ? "management" : "qa");
-    }
-  }, [user?.email, isExecutive]);
+  const [role, setRoleState] = useState<Role>(defaultRole);
+  const [trackedEmail, setTrackedEmail] = useState<string | undefined>(
+    undefined,
+  );
+  const [initialized, setInitialized] = useState(false);
+
+  // Derive the role from persisted storage whenever the signed-in user changes.
+  // This is React's endorsed "adjust state during render" pattern (no effect).
+  if (!initialized || user?.email !== trackedEmail) {
+    setInitialized(true);
+    setTrackedEmail(user?.email);
+    setRoleState(readStoredRole(user?.email) ?? defaultRole);
+  }
 
   const setRole = useCallback(
     (next: Role) => {
