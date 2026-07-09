@@ -23,6 +23,7 @@ import ObjectivesCheckList from "@/components/testing/ObjectivesCheckList";
 import TestEnvironmentSetup from "@/components/testing/TestEnvironmentSetup";
 import SignOffSection from "@/components/testing/SignOffSection";
 import { PRDUploader } from "@/components/project/PRDUploader";
+import SeedLoanTestPack from "@/components/project/SeedLoanTestPack";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -279,6 +280,9 @@ export default function ProjectPage() {
               <PRDUploader projectId={currentProject.id} />
             </CardContent>
           </Card>
+
+          {/* Loan Test Pack seed */}
+          <SeedLoanTestPack projectId={currentProject.id} />
         </div>
       </div>
     </div>
