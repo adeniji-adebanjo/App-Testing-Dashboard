@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Card,
@@ -27,6 +27,7 @@ import { loadProjects, getProjectStats } from "@/lib/projectStorage";
 import { Project, ProjectStats } from "@/types/project";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
 export default function PublicProjectSummaryPage() {
   const { projectId } = useParams();
@@ -37,11 +38,21 @@ export default function PublicProjectSummaryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [user, authLoading, router]);
+
   useEffect(() => {
     const loadData = async () => {
       try {
-        const projects = await loadProjects();
-        const foundProject = projects.find((p) => p.id === id);
+        const foundProject = await loadProjects().then((projects) =>
+          projects.find((p) => p.id === id),
+        );
 
         if (!foundProject) {
           setError("Project not found");

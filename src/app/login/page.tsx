@@ -152,23 +152,6 @@ export default function LoginPage() {
                 {isLoading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
-
-            {!isSupabaseEnabled() && (
-              <div className="mt-6 pt-6 border-t border-white/10">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleDemoLogin}
-                  className="w-full py-6 bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white cursor-pointer gap-2"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Quick Demo Access
-                </Button>
-                <p className="text-center text-gray-500 text-xs mt-3">
-                  Demo mode - No Supabase Auth configured
-                </p>
-              </div>
-            )}
           </CardContent>
         </Card>
 

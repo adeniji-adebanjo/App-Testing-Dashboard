@@ -137,8 +137,23 @@ export default function ProjectListItem({ project }: ProjectListItemProps) {
               Mutated: {new Date(project.updatedAt).toLocaleDateString()}
             </span>
           </div>
-          <div className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-primary/10 group-hover:text-primary transition-all">
-            <ArrowRight size={16} />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const shareUrl = `${window.location.origin}/share/${project.id}`;
+                navigator.clipboard.writeText(shareUrl);
+                alert("Private share link copied to clipboard!");
+              }}
+              className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-900 hover:text-white transition-all cursor-pointer"
+              title="Copy Private Share Link"
+            >
+              <ArrowRight size={16} className="-rotate-45" />
+            </button>
+            <div className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-primary/10 group-hover:text-primary transition-all">
+              <ArrowRight size={16} />
+            </div>
           </div>
         </div>
       </div>

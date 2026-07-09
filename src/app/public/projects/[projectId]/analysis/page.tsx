@@ -351,8 +351,8 @@ export default function PublicProjectAnalysisPage() {
           alternateRowStyles: { fillColor: [248, 250, 252] },
         });
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        yPos = (doc as any).lastAutoTable.finalY + 15;
+        // @ts-expect-error - lastAutoTable is added dynamically by jspdf-autotable
+        yPos = doc.lastAutoTable.finalY + 15;
       }
 
       // Add new page if needed
@@ -475,7 +475,7 @@ export default function PublicProjectAnalysisPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
       {/* Header */}
       <header className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">

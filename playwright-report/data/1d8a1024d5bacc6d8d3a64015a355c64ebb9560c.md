@@ -1,0 +1,42 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - heading "TestPortal" [level=1] [ref=e5]
+      - paragraph [ref=e6]: QA Executive Dashboard
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - img [ref=e10]
+        - heading "Executive Access" [level=3] [ref=e12]
+        - paragraph [ref=e13]: Sign in to manage your testing portfolio
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - text: Email
+          - generic [ref=e17]:
+            - img [ref=e18]
+            - textbox "Email" [ref=e21]:
+              - /placeholder: you@example.com
+        - generic [ref=e22]:
+          - text: Password
+          - generic [ref=e23]:
+            - img [ref=e24]
+            - textbox "Password" [ref=e27]:
+              - /placeholder: ••••••••
+            - button "Show password" [ref=e28]:
+              - img [ref=e29]
+        - button "Sign In" [ref=e32] [cursor=pointer]
+    - paragraph [ref=e33]: Protected access for authorized QA personnel only
+  - generic [ref=e34]:
+    - img [ref=e36]
+    - button "Open Tanstack query devtools" [ref=e84] [cursor=pointer]:
+      - img [ref=e85]
+  - generic [ref=e133]:
+    - button "Scroll to top":
+      - img
+      - generic: Scroll to top
+  - button "Open Next.js Dev Tools" [ref=e139] [cursor=pointer]:
+    - img [ref=e140]
+  - alert [ref=e143]
+```

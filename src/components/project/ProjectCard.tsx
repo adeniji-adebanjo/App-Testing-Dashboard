@@ -184,6 +184,19 @@ export default function ProjectCard({ project }: ProjectCardProps) {
               minute: "2-digit",
             })}
           </div>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const shareUrl = `${window.location.origin}/share/${project.id}`;
+              navigator.clipboard.writeText(shareUrl);
+              alert("Private share link copied to clipboard!");
+            }}
+            className="mt-2 w-full flex items-center justify-center gap-2 py-2 px-3 bg-gray-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-black transition-colors"
+          >
+            <ArrowRight size={12} className="-rotate-45" />
+            Share Private Link
+          </button>
         </CardFooter>
       </Card>
     </Link>
