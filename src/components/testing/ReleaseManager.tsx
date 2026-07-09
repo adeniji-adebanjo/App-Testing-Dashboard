@@ -10,6 +10,7 @@ import {
   useDefects,
 } from "@/hooks/useTestData";
 import { useAuth } from "@/context/AuthContext";
+import { useRole } from "@/context/RoleContext";
 import { appendAuditEntry } from "@/lib/cloudStorage";
 import {
   Release,
@@ -70,6 +71,9 @@ export default function ReleaseManager() {
   const { projectId } = useParams();
   const id = projectId as string;
   const { user } = useAuth();
+  const { can } = useRole();
+  const canPlan = can("release:plan");
+  const canSignoff = can("release:signoff");
   const queryClient = useQueryClient();
 
   const { data: releases, isLoading: relLoading } = useReleases(id);
@@ -251,48 +255,57 @@ export default function ReleaseManager() {
               created {formatDate(new Date(selected.createdAt))}
             </p>
           </div>
-          <div className="flex gap-2">
-            {selected.status !== "released" &&
-              selected.status !== "rolled-back" && (
+          {canSignoff ? (
+            <div className="flex gap-2">
+              {selected.status !== "released" &&
+                selected.status !== "rolled-back" && (
+                  <Button
+                    onClick={() =>
+                      changeStatus(selected, "signed-off", {
+                        ...selected,
+                        checklist: resolved,
+                      })
+                    }
+                    disabled={!ready || selected.status === "signed-off"}
+                    className="gap-2"
+                    title={
+                      ready
+                        ? "All checklist items pass"
+                        : "Complete every checklist item to sign off"
+                    }
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    Sign Off Release
+                  </Button>
+                )}
+              {selected.status === "signed-off" && (
                 <Button
-                  onClick={() =>
-                    changeStatus(selected, "signed-off", {
-                      ...selected,
-                      checklist: resolved,
-                    })
-                  }
-                  disabled={!ready || selected.status === "signed-off"}
+                  onClick={() => changeStatus(selected, "released")}
                   className="gap-2"
-                  title={
-                    ready
-                      ? "All checklist items pass"
-                      : "Complete every checklist item to sign off"
-                  }
                 >
-                  <ShieldCheck className="h-4 w-4" />
-                  Sign Off Release
+                  <Rocket className="h-4 w-4" />
+                  Mark Released
                 </Button>
               )}
-            {selected.status === "signed-off" && (
-              <Button
-                onClick={() => changeStatus(selected, "released")}
-                className="gap-2"
-              >
-                <Rocket className="h-4 w-4" />
-                Mark Released
-              </Button>
-            )}
-            {(selected.status === "signed-off" ||
-              selected.status === "released") && (
-              <Button
-                variant="outline"
-                onClick={() => changeStatus(selected, "rolled-back")}
-                className="gap-2 text-red-600 border-red-200"
-              >
-                Roll Back
-              </Button>
-            )}
-          </div>
+              {(selected.status === "signed-off" ||
+                selected.status === "released") && (
+                <Button
+                  variant="outline"
+                  onClick={() => changeStatus(selected, "rolled-back")}
+                  className="gap-2 text-red-600 border-red-200"
+                >
+                  Roll Back
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Badge
+              variant="outline"
+              className="text-[10px] text-gray-500 gap-1 h-fit"
+            >
+              <Lock className="h-3 w-3" /> Management sign-off required
+            </Badge>
+          )}
         </div>
 
         {/* Readiness banner */}
@@ -350,10 +363,11 @@ export default function ReleaseManager() {
                     <button
                       onClick={() => toggleManualItem(selected, item.key)}
                       disabled={
+                        !canPlan ||
                         selected.status === "released" ||
                         selected.status === "rolled-back"
                       }
-                      className="disabled:opacity-50"
+                      className="disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {item.done ? (
                         <CheckCircle2 className="h-5 w-5 text-emerald-500" />
@@ -450,7 +464,11 @@ export default function ReleaseManager() {
                 placeholder="Signatory name"
                 className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary"
               />
-              <Button variant="outline" onClick={() => addSignOff(selected)}>
+              <Button
+                variant="outline"
+                onClick={() => addSignOff(selected)}
+                disabled={!canPlan}
+              >
                 Add Sign-off
               </Button>
             </div>
@@ -475,7 +493,7 @@ export default function ReleaseManager() {
         </div>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2" disabled={!canPlan}>
               <Plus className="h-4 w-4" />
               New Release
             </Button>

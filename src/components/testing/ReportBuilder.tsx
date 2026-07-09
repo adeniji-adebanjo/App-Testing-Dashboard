@@ -4,6 +4,7 @@ import { useMemo, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useProject } from "@/context/ProjectContext";
 import { useAuth } from "@/context/AuthContext";
+import { useRole } from "@/context/RoleContext";
 import {
   useTestCases,
   useDefects,
@@ -12,6 +13,7 @@ import {
   useReleases,
   useReportSnapshots,
   useUpdateReportSnapshots,
+  useMonitoringEvents,
 } from "@/hooks/useTestData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,12 +37,14 @@ export default function ReportBuilder() {
   const id = projectId as string;
   const { currentProject } = useProject();
   const { user } = useAuth();
+  const { can } = useRole();
 
   const { data: testCases, isLoading: l1 } = useTestCases(id);
   const { data: defects, isLoading: l2 } = useDefects(id);
   const { data: requirements, isLoading: l3 } = useRequirements(id);
   const { data: runs, isLoading: l4 } = useTestRuns(id);
   const { data: releases, isLoading: l5 } = useReleases(id);
+  const { data: monitoringEvents } = useMonitoringEvents(id);
   const { data: snapshots } = useReportSnapshots(id);
   const updateSnapshots = useUpdateReportSnapshots(id);
 
@@ -58,8 +62,17 @@ export default function ReportBuilder() {
       requirements: requirements || [],
       runs: runs || [],
       releases: releases || [],
+      monitoringEvents: monitoringEvents || [],
     }),
-    [currentProject, testCases, defects, requirements, runs, releases],
+    [
+      currentProject,
+      testCases,
+      defects,
+      requirements,
+      runs,
+      releases,
+      monitoringEvents,
+    ],
   );
 
   const liveContent = useMemo(
@@ -227,7 +240,7 @@ export default function ReportBuilder() {
                 >
                   <Printer className="h-3.5 w-3.5" /> Print
                 </Button>
-                {!viewing && (
+                {!viewing && can("report:publish") && (
                   <Button
                     size="sm"
                     onClick={publish}
@@ -239,7 +252,7 @@ export default function ReportBuilder() {
                 )}
               </div>
             </div>
-            <pre className="p-6 text-[11px] font-mono text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50/30 overflow-auto max-h-[560px] flex-1">
+            <pre className="p-6 text-[11px] font-mono text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50/30 overflow-auto max-h-140 flex-1">
               {content}
             </pre>
           </div>

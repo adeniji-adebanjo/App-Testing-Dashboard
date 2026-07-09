@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import ProjectSwitcher from "@/components/project/ProjectSwitcher";
 import { useAuth } from "@/context/AuthContext";
+import { useRole } from "@/context/RoleContext";
+import { ALL_ROLES, ROLE_META, Role } from "@/types/role";
 import { useProjectTabs } from "@/hooks/useTestData";
 import { useCloudSyncStatus } from "@/hooks/useCloudSyncStatus";
 
@@ -48,6 +50,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const { projectId } = useParams();
   const { user, isAuthenticated, signOut } = useAuth();
+  const { role, setRole } = useRole();
   const router = useRouter();
 
   // Fetch dynamic tabs
@@ -198,9 +201,27 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
                 </span>
                 <span className="text-[10px] text-gray-500 truncate flex items-center gap-1">
                   <Shield size={10} className="text-primary" />
-                  Executive Access
+                  {ROLE_META[role].label}
                 </span>
               </div>
+            </div>
+            {/* Governance role (§8) */}
+            <div className="mt-3">
+              <label className="text-[9px] font-bold uppercase tracking-wider text-gray-500">
+                Governance Role
+              </label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as Role)}
+                className="mt-1 w-full rounded-lg bg-gray-800 border border-gray-700 text-xs text-gray-200 px-2 py-1.5 outline-none focus:ring-1 focus:ring-primary"
+                title={ROLE_META[role].description}
+              >
+                {ALL_ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {ROLE_META[r].label}
+                  </option>
+                ))}
+              </select>
             </div>
             <button
               onClick={handleSignOut}

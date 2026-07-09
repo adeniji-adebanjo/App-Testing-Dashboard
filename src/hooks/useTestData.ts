@@ -33,6 +33,7 @@ import {
   saveReleases,
   loadReportSnapshots,
   saveReportSnapshots,
+  loadMonitoringEvents,
 } from "@/lib/cloudStorage";
 import { ProjectTab } from "@/types/project";
 import { TestRun } from "@/types/test-run";
@@ -344,6 +345,16 @@ export function useUpdateReportSnapshots(projectId: string) {
         queryKey: ["reportSnapshots", projectId],
       });
     },
+  });
+}
+
+// --- Monitoring Events ---
+
+export function useMonitoringEvents(projectId: string) {
+  return useQuery({
+    queryKey: ["monitoringEvents", projectId],
+    queryFn: () => loadMonitoringEvents(projectId),
+    enabled: !!projectId,
   });
 }
 

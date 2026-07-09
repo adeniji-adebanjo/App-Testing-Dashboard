@@ -3,6 +3,7 @@ import { TestRun } from "@/types/test-run";
 import { Release, resolveChecklist, evaluateAutoChecklist } from "@/types/release";
 import { Requirement } from "@/types/requirement";
 import { ReportType } from "@/types/report";
+import { MonitoringEvent } from "@/types/monitoring";
 
 // Rosabon QA Framework §25 - report generators. Each produces an audit-ready
 // text report from live project data.
@@ -15,6 +16,7 @@ export interface ReportData {
   requirements: Requirement[];
   runs: TestRun[];
   releases: Release[];
+  monitoringEvents: MonitoringEvent[];
 }
 
 const RISK_ORDER: RiskLevel[] = ["critical", "high", "medium", "low"];
@@ -120,6 +122,23 @@ function defectReport(data: ReportData): string {
         ).toFixed(1)
       : "—";
 
+  // Production monitoring signals (§15) from ingested crash/incident events.
+  const events = data.monitoringEvents || [];
+  const crashes = events
+    .filter((e) => e.type === "crash")
+    .reduce((sum, e) => sum + (e.count || 1), 0);
+  const incidents = events.filter((e) => e.type === "incident").length;
+  const recentEvents =
+    events.length > 0
+      ? events
+          .slice(0, 5)
+          .map(
+            (e) =>
+              `  ${pad(e.type.toUpperCase(), 10)} ${pad(e.source, 12)} ${e.title}`,
+          )
+          .join("\n")
+      : "  (no monitoring events ingested)";
+
   return `${header("Defect Report", data)}
 SUMMARY
 -------
@@ -134,6 +153,13 @@ ${bySeverity}
 BY STATUS
 ---------
 ${byStatus}
+
+PRODUCTION MONITORING (§15)
+---------------------------
+Crash Frequency: ${crashes} crash occurrence(s)
+Production Incidents: ${incidents}
+Recent Events:
+${recentEvents}
 `;
 }
 

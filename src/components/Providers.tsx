@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState, ReactNode } from "react";
 import { ProjectProvider } from "@/context/ProjectContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { RoleProvider } from "@/context/RoleContext";
 
 export default function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -24,7 +25,9 @@ export default function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <ProjectProvider>{children}</ProjectProvider>
+        <RoleProvider>
+          <ProjectProvider>{children}</ProjectProvider>
+        </RoleProvider>
       </AuthProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

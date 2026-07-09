@@ -16,6 +16,7 @@ import { AuditEntry } from "@/types/audit";
 import { Requirement } from "@/types/requirement";
 import { Release } from "@/types/release";
 import { ReportSnapshot } from "@/types/report";
+import { MonitoringEvent } from "@/types/monitoring";
 import { supabase, getSessionId, isSupabaseEnabled } from "./supabase";
 import {
   setSyncing,
@@ -49,6 +50,7 @@ const STORAGE_KEYS = {
   REQUIREMENTS: "credit_bureau_requirements",
   RELEASES: "credit_bureau_releases",
   REPORT_SNAPSHOTS: "credit_bureau_report_snapshots",
+  MONITORING_EVENTS: "credit_bureau_monitoring_events",
   LAST_UPDATED: "credit_bureau_last_updated",
 };
 
@@ -618,6 +620,17 @@ export const loadReportSnapshots = async (
 ): Promise<ReportSnapshot[]> => {
   return loadFromCloud<ReportSnapshot[]>(
     STORAGE_KEYS.REPORT_SNAPSHOTS,
+    [],
+    projectId,
+  );
+};
+
+// --- Monitoring Events (§15, §25) ---
+export const loadMonitoringEvents = async (
+  projectId?: string,
+): Promise<MonitoringEvent[]> => {
+  return loadFromCloud<MonitoringEvent[]>(
+    STORAGE_KEYS.MONITORING_EVENTS,
     [],
     projectId,
   );
