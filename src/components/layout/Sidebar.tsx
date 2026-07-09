@@ -11,6 +11,7 @@ import {
   BarChart3,
   FileText,
   FlaskConical,
+  ListChecks,
   X,
   LayoutGrid,
   ChevronRight,
@@ -101,6 +102,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
 
     // Remaining standard items
     navItems.push(
+      { name: "Requirements", href: `${base}/requirements`, icon: ListChecks },
       { name: "Test Runs", href: `${base}/test-runs`, icon: FlaskConical },
       { name: "Defect Tracking", href: `${base}/defects`, icon: Bug },
       { name: "Success Metrics", href: `${base}/metrics`, icon: BarChart3 },

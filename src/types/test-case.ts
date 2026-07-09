@@ -54,6 +54,7 @@ export interface TestCase {
   businessImpact?: string; // e.g. "Direct financial movement"
   testType?: TestDiscipline; // Discipline this case belongs to (§10-15)
   financial?: FinancialAssertion; // Numeric financial-accuracy assertion (§2.1)
+  requirementIds?: string[]; // Linked requirements for traceability (§26, §28)
   createdAt?: Date;
   updatedAt?: Date;
 }

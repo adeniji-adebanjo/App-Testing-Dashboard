@@ -27,9 +27,12 @@ import {
   loadTestRuns,
   saveTestRuns,
   loadAuditLog,
+  loadRequirements,
+  saveRequirements,
 } from "@/lib/cloudStorage";
 import { ProjectTab } from "@/types/project";
 import { TestRun } from "@/types/test-run";
+import { Requirement } from "@/types/requirement";
 import {
   FunctionalModule,
   FunctionalModuleTemplate,
@@ -270,6 +273,27 @@ export function useUpdateTestRuns(projectId: string) {
     mutationFn: (runs: TestRun[]) => saveTestRuns(runs, projectId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["testRuns", projectId] });
+    },
+  });
+}
+
+// --- Requirements ---
+
+export function useRequirements(projectId: string) {
+  return useQuery({
+    queryKey: ["requirements", projectId],
+    queryFn: () => loadRequirements(projectId),
+    enabled: !!projectId,
+  });
+}
+
+export function useUpdateRequirements(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (requirements: Requirement[]) =>
+      saveRequirements(requirements, projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["requirements", projectId] });
     },
   });
 }

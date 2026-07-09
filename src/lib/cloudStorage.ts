@@ -13,6 +13,7 @@ import {
 } from "@/types/functional-module";
 import { TestRun } from "@/types/test-run";
 import { AuditEntry } from "@/types/audit";
+import { Requirement } from "@/types/requirement";
 import { supabase, getSessionId, isSupabaseEnabled } from "./supabase";
 import {
   setSyncing,
@@ -43,6 +44,7 @@ const STORAGE_KEYS = {
     "credit_bureau_non_functional_module_templates",
   TEST_RUNS: "credit_bureau_test_runs",
   AUDIT_LOG: "credit_bureau_audit_log",
+  REQUIREMENTS: "credit_bureau_requirements",
   LAST_UPDATED: "credit_bureau_last_updated",
 };
 
@@ -565,6 +567,24 @@ export const loadTestRuns = async (
   projectId?: string,
 ): Promise<TestRun[]> => {
   return loadFromCloud<TestRun[]>(STORAGE_KEYS.TEST_RUNS, [], projectId);
+};
+
+// --- Requirements (§26, §28) ---
+export const saveRequirements = async (
+  requirements: Requirement[],
+  projectId?: string,
+): Promise<boolean> => {
+  return saveToCloud(STORAGE_KEYS.REQUIREMENTS, requirements, projectId);
+};
+
+export const loadRequirements = async (
+  projectId?: string,
+): Promise<Requirement[]> => {
+  return loadFromCloud<Requirement[]>(
+    STORAGE_KEYS.REQUIREMENTS,
+    [],
+    projectId,
+  );
 };
 
 // --- Audit Log (§28) ---
