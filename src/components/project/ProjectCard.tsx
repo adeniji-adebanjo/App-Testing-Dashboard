@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/toast";
 
 const iconMap = {
   "credit-card": CreditCard,
@@ -38,6 +39,7 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ project }: ProjectCardProps) {
+  const { toast } = useToast();
   const Icon = iconMap[project.icon as keyof typeof iconMap] || Monitor;
 
   const statusColors = {
@@ -190,7 +192,10 @@ export default function ProjectCard({ project }: ProjectCardProps) {
               e.stopPropagation();
               const shareUrl = `${window.location.origin}/share/${project.id}`;
               navigator.clipboard.writeText(shareUrl);
-              alert("Private share link copied to clipboard!");
+              toast({
+                variant: "success",
+                description: "Private share link copied to clipboard.",
+              });
             }}
             className="mt-2 w-full flex items-center justify-center gap-2 py-2 px-3 bg-gray-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-black transition-colors"
           >

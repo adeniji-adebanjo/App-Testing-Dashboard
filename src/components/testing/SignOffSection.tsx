@@ -18,8 +18,10 @@ import { ShieldCheck, UserCheck, Calendar, Lock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/toast";
 
 export default function SignOffSection() {
+  const { toast } = useToast();
   const { currentProject } = useProject();
   const projectId = currentProject?.id || "";
 
@@ -33,7 +35,11 @@ export default function SignOffSection() {
 
   const handleSignOff = () => {
     if (!signerName || !signerRole) {
-      alert("Please provide name and role for sign-off");
+      toast({
+        variant: "error",
+        title: "Missing details",
+        description: "Please provide a name and role for the sign-off.",
+      });
       return;
     }
 

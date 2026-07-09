@@ -28,8 +28,12 @@ import { useDefects, useUpdateDefects } from "@/hooks/useTestData";
 import { useProject } from "@/context/ProjectContext";
 import { Plus, Edit, Trash2, Bug } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 export default function DefectTracker() {
+  const { toast } = useToast();
+  const confirm = useConfirm();
   const { currentProject } = useProject();
   const projectId = currentProject?.id || "";
 
@@ -52,7 +56,11 @@ export default function DefectTracker() {
 
   const handleSubmit = () => {
     if (!formData.bugId || !formData.module || !formData.description) {
-      alert("Please fill in all required fields");
+      toast({
+        variant: "error",
+        title: "Missing required fields",
+        description: "Please fill in Bug ID, module, and description.",
+      });
       return;
     }
 
@@ -105,8 +113,15 @@ export default function DefectTracker() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this defect?")) {
+  const handleDelete = async (id: string) => {
+    const confirmed = await confirm({
+      title: "Delete defect?",
+      description:
+        "This will permanently remove the defect. This action cannot be undone.",
+      confirmText: "Delete",
+      variant: "destructive",
+    });
+    if (confirmed) {
       updateMutation.mutate(defects.filter((d) => d.id !== id));
     }
   };

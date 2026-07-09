@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useProjectTabs, useUpdateProjectTabs } from "@/hooks/useTestData";
+import { useToast } from "@/components/ui/toast";
 import { ProjectTab } from "@/types/project";
 
 interface ProjectTabsManagerProps {
@@ -59,6 +60,7 @@ interface ProjectTabsEditorProps {
 function ProjectTabsEditor({ projectId, initialTabs }: ProjectTabsEditorProps) {
   const { mutate: updateTabs, isPending: isSaving } =
     useUpdateProjectTabs(projectId);
+  const { toast } = useToast();
 
   const [tabs, setTabs] = useState<ProjectTab[]>(initialTabs);
   const [newTabName, setNewTabName] = useState("");
@@ -94,7 +96,11 @@ function ProjectTabsEditor({ projectId, initialTabs }: ProjectTabsEditorProps) {
   const handleRemoveTab = (tabId: string) => {
     const tabToRemove = tabs.find((t) => t.id === tabId);
     if (tabToRemove?.isDefault) {
-      alert("Cannot remove default tabs");
+      toast({
+        variant: "warning",
+        title: "Can't remove tab",
+        description: "Default tabs cannot be removed.",
+      });
       return;
     }
     setTabs(tabs.filter((t) => t.id !== tabId));

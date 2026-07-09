@@ -6,6 +6,8 @@ import { useState, ReactNode } from "react";
 import { ProjectProvider } from "@/context/ProjectContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { RoleProvider } from "@/context/RoleContext";
+import { ToastProvider } from "@/components/ui/toast";
+import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 
 export default function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -26,7 +28,11 @@ export default function Providers({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <RoleProvider>
-          <ProjectProvider>{children}</ProjectProvider>
+          <ProjectProvider>
+            <ToastProvider>
+              <ConfirmProvider>{children}</ConfirmProvider>
+            </ToastProvider>
+          </ProjectProvider>
         </RoleProvider>
       </AuthProvider>
       <ReactQueryDevtools initialIsOpen={false} />

@@ -39,11 +39,13 @@ import {
 } from "@/lib/export";
 import { ShareableLink } from "@/components/project/ShareableLink";
 import ReportBuilder from "@/components/testing/ReportBuilder";
+import { useToast } from "@/components/ui/toast";
 
 export default function ProjectReportsPage() {
   const { projectId } = useParams();
   const id = projectId as string;
   const { currentProject } = useProject();
+  const { toast } = useToast();
 
   const { data: testCases, isLoading: testsLoading } = useTestCases(id);
   const { data: defects, isLoading: defectsLoading } = useDefects(id);
@@ -181,13 +183,27 @@ Success Metrics: ${mt.length} defined
                 icon={<FileSpreadsheet className="text-green-600" />}
                 title="Test Matrix"
                 format="CSV"
-                onClick={() => exportTestCasesAsCSV(testCases || [])}
+                onClick={() => {
+                  if (!exportTestCasesAsCSV(testCases || [])) {
+                    toast({
+                      variant: "warning",
+                      description: "No test cases to export.",
+                    });
+                  }
+                }}
               />
               <ExportButton
                 icon={<FileSpreadsheet className="text-orange-500" />}
                 title="Defect Log"
                 format="CSV"
-                onClick={() => exportDefectsAsCSV(defects || [])}
+                onClick={() => {
+                  if (!exportDefectsAsCSV(defects || [])) {
+                    toast({
+                      variant: "warning",
+                      description: "No defects to export.",
+                    });
+                  }
+                }}
               />
               <ExportButton
                 icon={<FileJson className="text-purple-500" />}

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/toast";
 
 const iconMap = {
   "credit-card": CreditCard,
@@ -28,6 +29,7 @@ interface ProjectListItemProps {
 }
 
 export default function ProjectListItem({ project }: ProjectListItemProps) {
+  const { toast } = useToast();
   const Icon = iconMap[project.icon as keyof typeof iconMap] || Monitor;
 
   const statusColors = {
@@ -144,7 +146,10 @@ export default function ProjectListItem({ project }: ProjectListItemProps) {
                 e.stopPropagation();
                 const shareUrl = `${window.location.origin}/share/${project.id}`;
                 navigator.clipboard.writeText(shareUrl);
-                alert("Private share link copied to clipboard!");
+                toast({
+                  variant: "success",
+                  description: "Private share link copied to clipboard.",
+                });
               }}
               className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-900 hover:text-white transition-all cursor-pointer"
               title="Copy Private Share Link"

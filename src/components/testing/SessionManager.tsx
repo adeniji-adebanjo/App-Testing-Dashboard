@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/card";
 import { getSessionId, setSessionId } from "@/lib/supabase";
 import { Copy, Save } from "lucide-react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 export default function SessionManager() {
+  const confirm = useConfirm();
   const [currentSessionId] = useState(() => {
     if (typeof window !== "undefined") {
       return getSessionId();
@@ -29,10 +31,17 @@ export default function SessionManager() {
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!inputSessionId.trim()) return;
 
-    if (confirm("Switching sessions will reload the page. Continue?")) {
+    const confirmed = await confirm({
+      title: "Switch session?",
+      description:
+        "Switching sessions will reload the page. Any unsaved changes may be lost.",
+      confirmText: "Switch session",
+    });
+
+    if (confirmed) {
       setSessionId(inputSessionId.trim());
       window.location.reload();
     }

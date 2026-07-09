@@ -22,10 +22,9 @@ export const exportAsJSON = (data: any, fileName?: string): void => {
 };
 
 // Export as CSV (for test cases)
-export const exportTestCasesAsCSV = (testCases: TestCase[]): void => {
+export const exportTestCasesAsCSV = (testCases: TestCase[]): boolean => {
   if (!testCases || testCases.length === 0) {
-    alert("No test cases to export");
-    return;
+    return false;
   }
 
   const headers = [
@@ -63,13 +62,13 @@ export const exportTestCasesAsCSV = (testCases: TestCase[]): void => {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+  return true;
 };
 
 // Export defects as CSV
-export const exportDefectsAsCSV = (defects: Defect[]): void => {
+export const exportDefectsAsCSV = (defects: Defect[]): boolean => {
   if (!defects || defects.length === 0) {
-    alert("No defects to export");
-    return;
+    return false;
   }
 
   const headers = [
@@ -107,6 +106,7 @@ export const exportDefectsAsCSV = (defects: Defect[]): void => {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+  return true;
 };
 
 // Generate summary report string
