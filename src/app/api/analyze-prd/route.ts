@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const ANTHROPIC_MODEL = "claude-opus-4-8";
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,10 +15,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if API key is configured
-    if (!GEMINI_API_KEY) {
-      console.log(
-        "No GOOGLE_GENERATIVE_AI_API_KEY configured, using mock data",
-      );
+    if (!ANTHROPIC_API_KEY) {
+      console.log("No ANTHROPIC_API_KEY configured, using mock data");
       // Return mock data if no API key
       return NextResponse.json({
         success: true,
@@ -27,13 +25,9 @@ export async function POST(request: NextRequest) {
         testCases: generateMockTestCases(projectId),
         objectives: generateMockObjectives(projectId),
         analysis:
-          "Mock analysis: API key not configured. Add GOOGLE_GENERATIVE_AI_API_KEY to your .env.local file for real AI processing.",
+          "Mock analysis: API key not configured. Add ANTHROPIC_API_KEY to your .env.local file for real AI processing.",
       });
     }
-
-    // Initialize Gemini
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Construct the prompt for test cases, objectives, AND tabs
     const prompt = `You are a QA Test Architecture Generator. Analyze the following Product Requirements Document (PRD) and extract:
@@ -75,12 +69,60 @@ ${content.substring(0, 15000)}
 
 Return ONLY valid JSON, no markdown formatting or explanation.`;
 
-    // Call Gemini API
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    // Call the Anthropic Messages API (raw HTTP — the SDK is unavailable in
+    // this environment; Node's global fetch is used instead).
+    const apiResponse = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: ANTHROPIC_MODEL,
+        max_tokens: 16000,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
 
-    console.log("Gemini API response received, parsing...");
+    if (!apiResponse.ok) {
+      const errText = await apiResponse.text();
+      console.error("Anthropic API error:", apiResponse.status, errText);
+      // Fall back to sample data so the flow still works
+      return NextResponse.json({
+        success: true,
+        usedMock: true,
+        tabs: generateMockTabs(projectId),
+        testCases: generateMockTestCases(projectId),
+        objectives: generateMockObjectives(projectId),
+        analysis: `AI request failed (HTTP ${apiResponse.status}). Using sample data.`,
+      });
+    }
+
+    const message = await apiResponse.json();
+
+    // Safety classifiers may decline the request (HTTP 200, stop_reason "refusal")
+    if (message.stop_reason === "refusal") {
+      return NextResponse.json({
+        success: true,
+        usedMock: true,
+        tabs: generateMockTabs(projectId),
+        testCases: generateMockTestCases(projectId),
+        objectives: generateMockObjectives(projectId),
+        analysis:
+          "AI request was declined by safety filters. Using sample data.",
+      });
+    }
+
+    // Concatenate the text content blocks from the response
+    const text: string = Array.isArray(message.content)
+      ? message.content
+          .filter((b: { type: string }) => b.type === "text")
+          .map((b: { text: string }) => b.text)
+          .join("")
+      : "";
+
+    console.log("Anthropic API response received, parsing...");
 
     // Parse the JSON response
     let parsedData: {
