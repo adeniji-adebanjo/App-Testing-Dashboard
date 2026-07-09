@@ -12,6 +12,7 @@ import {
   FileText,
   FlaskConical,
   ListChecks,
+  Rocket,
   X,
   LayoutGrid,
   ChevronRight,
@@ -106,6 +107,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       { name: "Test Runs", href: `${base}/test-runs`, icon: FlaskConical },
       { name: "Defect Tracking", href: `${base}/defects`, icon: Bug },
       { name: "Success Metrics", href: `${base}/metrics`, icon: BarChart3 },
+      { name: "Release Readiness", href: `${base}/releases`, icon: Rocket },
       { name: "Reports & Export", href: `${base}/reports`, icon: FileText },
       { name: "Settings", href: `${base}/settings`, icon: Settings },
     );

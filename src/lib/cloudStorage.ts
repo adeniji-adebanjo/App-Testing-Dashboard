@@ -14,6 +14,8 @@ import {
 import { TestRun } from "@/types/test-run";
 import { AuditEntry } from "@/types/audit";
 import { Requirement } from "@/types/requirement";
+import { Release } from "@/types/release";
+import { ReportSnapshot } from "@/types/report";
 import { supabase, getSessionId, isSupabaseEnabled } from "./supabase";
 import {
   setSyncing,
@@ -45,6 +47,8 @@ const STORAGE_KEYS = {
   TEST_RUNS: "credit_bureau_test_runs",
   AUDIT_LOG: "credit_bureau_audit_log",
   REQUIREMENTS: "credit_bureau_requirements",
+  RELEASES: "credit_bureau_releases",
+  REPORT_SNAPSHOTS: "credit_bureau_report_snapshots",
   LAST_UPDATED: "credit_bureau_last_updated",
 };
 
@@ -582,6 +586,38 @@ export const loadRequirements = async (
 ): Promise<Requirement[]> => {
   return loadFromCloud<Requirement[]>(
     STORAGE_KEYS.REQUIREMENTS,
+    [],
+    projectId,
+  );
+};
+
+// --- Releases (§24, §20) ---
+export const saveReleases = async (
+  releases: Release[],
+  projectId?: string,
+): Promise<boolean> => {
+  return saveToCloud(STORAGE_KEYS.RELEASES, releases, projectId);
+};
+
+export const loadReleases = async (
+  projectId?: string,
+): Promise<Release[]> => {
+  return loadFromCloud<Release[]>(STORAGE_KEYS.RELEASES, [], projectId);
+};
+
+// --- Report Snapshots (§25, §26 - versioned published reports) ---
+export const saveReportSnapshots = async (
+  snapshots: ReportSnapshot[],
+  projectId?: string,
+): Promise<boolean> => {
+  return saveToCloud(STORAGE_KEYS.REPORT_SNAPSHOTS, snapshots, projectId);
+};
+
+export const loadReportSnapshots = async (
+  projectId?: string,
+): Promise<ReportSnapshot[]> => {
+  return loadFromCloud<ReportSnapshot[]>(
+    STORAGE_KEYS.REPORT_SNAPSHOTS,
     [],
     projectId,
   );

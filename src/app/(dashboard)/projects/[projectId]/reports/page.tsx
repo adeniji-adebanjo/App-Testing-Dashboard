@@ -38,6 +38,7 @@ import {
   printReport,
 } from "@/lib/export";
 import { ShareableLink } from "@/components/project/ShareableLink";
+import ReportBuilder from "@/components/testing/ReportBuilder";
 
 export default function ProjectReportsPage() {
   const { projectId } = useParams();
@@ -155,6 +156,9 @@ Success Metrics: ${mt.length} defined
           color="text-red-600"
         />
       </div>
+
+      {/* Framework Report Builder (§25) */}
+      <ReportBuilder />
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Export Actions */}

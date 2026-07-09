@@ -29,10 +29,16 @@ import {
   loadAuditLog,
   loadRequirements,
   saveRequirements,
+  loadReleases,
+  saveReleases,
+  loadReportSnapshots,
+  saveReportSnapshots,
 } from "@/lib/cloudStorage";
 import { ProjectTab } from "@/types/project";
 import { TestRun } from "@/types/test-run";
 import { Requirement } from "@/types/requirement";
+import { Release } from "@/types/release";
+import { ReportSnapshot } from "@/types/report";
 import {
   FunctionalModule,
   FunctionalModuleTemplate,
@@ -294,6 +300,49 @@ export function useUpdateRequirements(projectId: string) {
       saveRequirements(requirements, projectId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["requirements", projectId] });
+    },
+  });
+}
+
+// --- Releases ---
+
+export function useReleases(projectId: string) {
+  return useQuery({
+    queryKey: ["releases", projectId],
+    queryFn: () => loadReleases(projectId),
+    enabled: !!projectId,
+  });
+}
+
+export function useUpdateReleases(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (releases: Release[]) => saveReleases(releases, projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["releases", projectId] });
+    },
+  });
+}
+
+// --- Report Snapshots ---
+
+export function useReportSnapshots(projectId: string) {
+  return useQuery({
+    queryKey: ["reportSnapshots", projectId],
+    queryFn: () => loadReportSnapshots(projectId),
+    enabled: !!projectId,
+  });
+}
+
+export function useUpdateReportSnapshots(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (snapshots: ReportSnapshot[]) =>
+      saveReportSnapshots(snapshots, projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["reportSnapshots", projectId],
+      });
     },
   });
 }
