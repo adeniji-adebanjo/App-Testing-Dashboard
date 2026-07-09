@@ -20,31 +20,12 @@ import {
   Shield,
   LogOut,
   LogIn,
-  Database,
-  Globe,
-  Lock,
-  Zap,
-  Users,
-  LucideIcon,
 } from "lucide-react";
 import ProjectSwitcher from "@/components/project/ProjectSwitcher";
 import { useAuth } from "@/context/AuthContext";
 import { useRole } from "@/context/RoleContext";
 import { ALL_ROLES, ROLE_META, Role } from "@/types/role";
-import { useProjectTabs } from "@/hooks/useTestData";
 import { useCloudSyncStatus } from "@/hooks/useCloudSyncStatus";
-
-// Map icon strings to Lucide components
-const ICON_MAP: Record<string, LucideIcon> = {
-  "clipboard-list": ClipboardList,
-  activity: Activity,
-  database: Database,
-  globe: Globe,
-  lock: Lock,
-  shield: Shield,
-  zap: Zap,
-  users: Users,
-};
 
 export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
@@ -52,9 +33,6 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const { user, isAuthenticated, signOut } = useAuth();
   const { role, setRole } = useRole();
   const router = useRouter();
-
-  // Fetch dynamic tabs
-  const { data: projectTabs } = useProjectTabs(projectId as string);
 
   const getNavItems = () => {
     if (!projectId) {
@@ -77,32 +55,20 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
     // Core navigation items
     const navItems = [{ name: "Overview", href: base, icon: Home }];
 
-    // Add dynamic tabs or fallback to default if loading/empty (but only if we expect them)
-    if (projectTabs && projectTabs.length > 0) {
-      const sortedTabs = [...projectTabs].sort((a, b) => a.order - b.order);
-
-      sortedTabs.forEach((tab) => {
-        navItems.push({
-          name: tab.name,
-          href: `${base}/${tab.slug}`,
-          icon: ICON_MAP[tab.icon || "clipboard-list"] || ClipboardList,
-        });
-      });
-    } else {
-      // Fallback: Default tabs if no custom tabs (e.g., initial load or not yet saved)
-      navItems.push(
-        {
-          name: "Functional Testing",
-          href: `${base}/functional-testing`,
-          icon: ClipboardList,
-        },
-        {
-          name: "Non-Functional Testing",
-          href: `${base}/non-functional-testing`,
-          icon: Activity,
-        },
-      );
-    }
+    // Built-in testing pages — seeded/imported test cases live here, organised
+    // by module (auto-generated dynamic tabs are no longer shown).
+    navItems.push(
+      {
+        name: "Functional Testing",
+        href: `${base}/functional-testing`,
+        icon: ClipboardList,
+      },
+      {
+        name: "Non-Functional Testing",
+        href: `${base}/non-functional-testing`,
+        icon: Activity,
+      },
+    );
 
     // Remaining standard items
     navItems.push(
