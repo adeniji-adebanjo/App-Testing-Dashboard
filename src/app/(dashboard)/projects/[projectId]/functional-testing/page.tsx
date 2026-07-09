@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import TestCaseTable from "@/components/testing/TestCaseTable";
+import RiskBadge from "@/components/testing/RiskBadge";
 import FunctionalModulesManager from "@/components/testing/FunctionalModulesManager";
 import { TestCase } from "@/types/test-case";
 import {
@@ -121,7 +122,7 @@ function generateTestCasesFromTemplates(
   modules.forEach((module) => {
     const template = templates.find((t) => t.moduleId === module.id);
     if (template) {
-      template.defaultScenarios.forEach((scenario, idx) => {
+      template.defaultScenarios.forEach((scenario) => {
         testCases.push({
           id: `${module.id}-${scenario.id}`,
           projectId,
@@ -133,6 +134,10 @@ function generateTestCasesFromTemplates(
           status: "pending",
           actualResult: "",
           comments: "",
+          // Inherit risk classification from the module (§7)
+          riskLevel: module.riskLevel,
+          businessImpact: module.businessImpact,
+          testType: "functional",
         });
       });
     }
@@ -380,12 +385,20 @@ export default function FunctionalTestingPage() {
               <TabsContent key={module.id} value={module.slug} className="mt-6">
                 <div className="mb-4 flex justify-between items-center">
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-700">
-                      {module.name}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-gray-700">
+                        {module.name}
+                      </h3>
+                      <RiskBadge risk={module.riskLevel} />
+                    </div>
                     {module.description && (
                       <p className="text-xs text-gray-500 mt-0.5">
                         {module.description}
+                      </p>
+                    )}
+                    {module.businessImpact && (
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        Business impact: {module.businessImpact}
                       </p>
                     )}
                   </div>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { TestCase, TestStatus } from "@/types/test-case";
+import { TestCase, TestStatus, RiskLevel } from "@/types/test-case";
 import { Badge } from "@/components/ui/badge";
+import RiskBadge from "@/components/testing/RiskBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -103,6 +104,7 @@ export default function TestCaseTable({
                 </span>
               )}
               <div className="flex items-center gap-2">
+                <RiskBadge risk={testCase.riskLevel} showIcon={false} />
                 <Badge
                   className={cn(
                     getStatusColor(testCase.status),
@@ -219,6 +221,29 @@ export default function TestCaseTable({
                   </div>
                   <div>
                     <Label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1.5 block">
+                      Risk Level
+                    </Label>
+                    <select
+                      value={editData.riskLevel || ""}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          riskLevel: (e.target.value || undefined) as
+                            | RiskLevel
+                            | undefined,
+                        })
+                      }
+                      className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-[11px] focus:ring-1 focus:ring-primary outline-none transition-all"
+                    >
+                      <option value="">Unset</option>
+                      <option value="critical">Critical</option>
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1.5 block">
                       Internal Comments
                     </Label>
                     <input
@@ -317,21 +342,45 @@ export default function TestCaseTable({
               >
                 <td className="p-3">
                   {editingId === testCase.id ? (
-                    <input
-                      type="text"
-                      value={editData.testCaseId || ""}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          testCaseId: e.target.value,
-                        })
-                      }
-                      className="w-28 rounded border border-gray-300 px-2 py-1 text-xs font-mono"
-                    />
+                    <div className="flex flex-col gap-1.5">
+                      <input
+                        type="text"
+                        value={editData.testCaseId || ""}
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            testCaseId: e.target.value,
+                          })
+                        }
+                        className="w-28 rounded border border-gray-300 px-2 py-1 text-xs font-mono"
+                      />
+                      <select
+                        value={editData.riskLevel || ""}
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            riskLevel: (e.target.value || undefined) as
+                              | RiskLevel
+                              | undefined,
+                          })
+                        }
+                        className="w-28 rounded border border-gray-300 px-2 py-1 text-[11px]"
+                        title="Risk level"
+                      >
+                        <option value="">Risk: unset</option>
+                        <option value="critical">Critical</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                      </select>
+                    </div>
                   ) : (
-                    <span className="text-xs font-black text-gray-400 uppercase tracking-wider">
-                      {testCase.testCaseId}
-                    </span>
+                    <div className="flex flex-col items-start gap-1">
+                      <span className="text-xs font-black text-gray-400 uppercase tracking-wider">
+                        {testCase.testCaseId}
+                      </span>
+                      <RiskBadge risk={testCase.riskLevel} />
+                    </div>
                   )}
                 </td>
                 <td className="p-3">

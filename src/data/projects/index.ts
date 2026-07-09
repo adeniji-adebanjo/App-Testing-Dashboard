@@ -14,14 +14,26 @@ export {
   wealthManagementEnvironments,
 } from "./wealth-management";
 
+export {
+  ROSABON_PROJECT_ID,
+  rosabonProject,
+  rosabonObjectives,
+  rosabonEnvironments,
+  ROSABON_RISK_MATRIX,
+  ROSABON_FUNCTIONAL_MODULES,
+  ROSABON_NON_FUNCTIONAL_MODULES,
+} from "./rosabon";
+
 import { Project } from "@/types/project";
 import { creditBureauProject } from "./credit-bureau";
 import { wealthManagementProject } from "./wealth-management";
+import { rosabonProject } from "./rosabon";
 
 // All available projects
 export const DEFAULT_PROJECTS: Project[] = [
   creditBureauProject,
   wealthManagementProject,
+  rosabonProject,
 ];
 
 // Get project by ID

@@ -1,5 +1,24 @@
 export type TestStatus = "pass" | "fail" | "pending" | "blocked";
 
+// Rosabon QA Framework §7 - Risk Classification.
+// Drives risk-based test prioritization across the app.
+export type RiskLevel = "critical" | "high" | "medium" | "low";
+
+// Rosabon QA Framework §10-15 - Testing disciplines.
+// Lets a single test case be tagged with the discipline it belongs to
+// (functional, regression, API, security, performance, mobile, UAT).
+export type TestDiscipline =
+  | "functional"
+  | "regression"
+  | "api"
+  | "security"
+  | "performance"
+  | "mobile"
+  | "uat";
+
+// Rosabon QA Framework §21 - Environment Management.
+export type EnvironmentType = "dev" | "staging" | "production";
+
 export interface TestCase {
   id: string;
   projectId?: string; // Optional for backward compatibility
@@ -11,6 +30,9 @@ export interface TestCase {
   actualResult: string;
   status: TestStatus;
   comments: string;
+  riskLevel?: RiskLevel; // Inherited from module, overridable per case (§7)
+  businessImpact?: string; // e.g. "Direct financial movement"
+  testType?: TestDiscipline; // Discipline this case belongs to (§10-15)
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -29,6 +51,7 @@ export interface TestEnvironment {
   component: string;
   details: string;
   status: "ready" | "pending";
+  type?: EnvironmentType; // Dev / Staging-UAT / Production classification (§21)
 }
 
 export interface TestObjective {

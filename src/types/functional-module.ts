@@ -1,6 +1,8 @@
 // Generic Testing Module Types
 // Used for both Functional Testing and Non-Functional Testing modules
 
+import { RiskLevel } from "./test-case";
+
 export type TestModuleType = "functional" | "non-functional";
 
 export interface TestingModule {
@@ -13,6 +15,8 @@ export interface TestingModule {
   icon?: string; // Icon identifier
   order: number; // Sort order
   isDefault: boolean; // Whether this is a system default or custom
+  riskLevel?: RiskLevel; // Rosabon QA Framework §7 risk classification
+  businessImpact?: string; // e.g. "Direct financial movement"
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,6 +51,8 @@ export interface TestingModuleInput {
   description?: string;
   icon?: string;
   order?: number;
+  riskLevel?: RiskLevel;
+  businessImpact?: string;
   testCaseIdPrefix: string;
   defaultScenarios: Omit<DefaultTestScenario, "id">[];
 }
@@ -63,24 +69,32 @@ export const DEFAULT_FUNCTIONAL_MODULES: Omit<
     slug: "auth",
     description: "Login and access control testing",
     icon: "lock",
+    riskLevel: "critical",
+    businessImpact: "Security and account access",
   },
   {
     name: "Search",
     slug: "search",
     description: "Search functionality testing",
     icon: "search",
+    riskLevel: "medium",
+    businessImpact: "User productivity",
   },
   {
     name: "Duplicate Prevention",
     slug: "duplicate",
     description: "Duplicate detection and prevention testing",
     icon: "copy",
+    riskLevel: "high",
+    businessImpact: "Transaction integrity",
   },
   {
     name: "API Integration",
     slug: "api",
     description: "External API integration testing",
     icon: "api",
+    riskLevel: "high",
+    businessImpact: "Service communication",
   },
 ];
 
@@ -94,24 +108,32 @@ export const DEFAULT_NON_FUNCTIONAL_MODULES: Omit<
     slug: "performance",
     description: "Response time and load testing",
     icon: "gauge",
+    riskLevel: "high",
+    businessImpact: "Reliability and availability",
   },
   {
     name: "Security",
     slug: "security",
     description: "Security vulnerability and penetration testing",
     icon: "shield",
+    riskLevel: "critical",
+    businessImpact: "Data protection and fraud prevention",
   },
   {
     name: "Usability",
     slug: "usability",
     description: "User experience and accessibility testing",
     icon: "user",
+    riskLevel: "low",
+    businessImpact: "Customer experience",
   },
   {
     name: "Compatibility",
     slug: "compatibility",
     description: "Cross-browser and device compatibility testing",
     icon: "monitor",
+    riskLevel: "medium",
+    businessImpact: "Device reach",
   },
 ];
 

@@ -40,6 +40,8 @@ import {
   Code,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import RiskBadge from "@/components/testing/RiskBadge";
+import { RiskLevel } from "@/types/test-case";
 
 interface TestingModulesManagerProps {
   projectId: string;
@@ -87,6 +89,8 @@ export default function TestingModulesManager({
       slug: m.slug || m.name.toLowerCase().replace(/\s+/g, "-"),
       description: m.description,
       icon: m.icon,
+      riskLevel: m.riskLevel,
+      businessImpact: m.businessImpact,
       order: idx,
       isDefault: true,
     }));
@@ -494,6 +498,7 @@ export default function TestingModulesManager({
                           >
                             {module.slug}
                           </Badge>
+                          <RiskBadge risk={module.riskLevel} />
                           {module.isDefault && (
                             <Badge className="text-[9px] bg-primary/5 text-primary border-none font-bold uppercase tracking-wider px-1.5 py-0">
                               System
@@ -588,6 +593,44 @@ export default function TestingModulesManager({
                             className="w-16 px-2 py-1.5 text-sm border rounded focus:ring-1 focus:ring-primary outline-none mt-1"
                           />
                         </div>
+                        <div>
+                          <Label className="text-xs text-gray-500">
+                            Risk Level
+                          </Label>
+                          <select
+                            value={module.riskLevel || ""}
+                            onChange={(e) =>
+                              updateModule(module.id, {
+                                riskLevel: (e.target.value || undefined) as
+                                  | RiskLevel
+                                  | undefined,
+                              })
+                            }
+                            className="w-28 px-2 py-1.5 text-sm border rounded focus:ring-1 focus:ring-primary outline-none mt-1"
+                          >
+                            <option value="">Unset</option>
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-500">
+                          Business Impact
+                        </Label>
+                        <input
+                          type="text"
+                          value={module.businessImpact || ""}
+                          onChange={(e) =>
+                            updateModule(module.id, {
+                              businessImpact: e.target.value,
+                            })
+                          }
+                          className="w-full px-2 py-1.5 text-sm border rounded focus:ring-1 focus:ring-primary outline-none mt-1"
+                          placeholder="e.g. Direct financial movement"
+                        />
                       </div>
                     </div>
                   )}
