@@ -17,6 +17,7 @@ import {
   useNonFunctionalModules,
   useNonFunctionalModuleTemplates,
 } from "@/hooks/useTestData";
+import { deriveModulesFromTestCases } from "@/lib/moduleClassification";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Gauge, Settings2, Plus, RefreshCw } from "lucide-react";
 import { useMemo, useState, useCallback } from "react";
@@ -140,10 +141,21 @@ export default function NonFunctionalTestingPage() {
 
   // Determine which modules to use
   const activeModules = useMemo(() => {
-    if (nfModules && nfModules.length > 0) {
-      return nfModules.sort((a, b) => a.order - b.order);
-    }
-    // Fallback to default modules
+    const configured =
+      nfModules && nfModules.length > 0
+        ? [...nfModules].sort((a, b) => a.order - b.order)
+        : [];
+    // Surface previously-imported test cases whose module isn't configured yet
+    const derived = deriveModulesFromTestCases(
+      allTestCases,
+      configured,
+      "non-functional",
+      id,
+    );
+    const combined = [...configured, ...derived];
+    if (combined.length > 0) return combined;
+
+    // Fallback to default modules only when nothing else exists
     return DEFAULT_MODULES.map((m, idx) => ({
       id: m.slug,
       projectId: id,
@@ -154,7 +166,7 @@ export default function NonFunctionalTestingPage() {
       createdAt: new Date(),
       updatedAt: new Date(),
     })) as FunctionalModule[];
-  }, [nfModules, id]);
+  }, [nfModules, allTestCases, id]);
 
   // Get test cases, generate from templates if none exist
   const testCases = useMemo(() => {

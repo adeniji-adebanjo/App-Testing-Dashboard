@@ -19,11 +19,17 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { TestCase, TestObjective } from "@/types/test-case";
 import {
+  useTestCases,
   useUpdateTestCases,
+  useObjectives,
   useUpdateObjectives,
-  useUpdateProjectTabs,
+  useFunctionalModules,
+  useUpdateFunctionalModules,
+  useNonFunctionalModules,
+  useUpdateNonFunctionalModules,
 } from "@/hooks/useTestData";
-import { ProjectTab } from "@/types/project";
+import { TestingModule } from "@/types/functional-module";
+import { isNonFunctionalName, slugify } from "@/lib/moduleClassification";
 
 interface PRDUploaderProps {
   projectId: string;
@@ -68,16 +74,24 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
   const [result, setResult] = useState<ParsedResult | null>(null);
   const [importTestCases, setImportTestCases] = useState(true);
   const [importObjectives, setImportObjectives] = useState(true);
-  const [importTabs, setImportTabs] = useState(true);
+  const [importModules, setImportModules] = useState(true);
+
+  const { data: existingTestCases } = useTestCases(projectId);
+  const { data: existingObjectives } = useObjectives(projectId);
+  const { data: functionalModules } = useFunctionalModules(projectId);
+  const { data: nonFunctionalModules } = useNonFunctionalModules(projectId);
 
   const { mutate: updateTestCases, isPending: isSavingTests } =
     useUpdateTestCases(projectId);
   const { mutate: updateObjectives, isPending: isSavingObjectives } =
     useUpdateObjectives(projectId);
-  const { mutate: updateProjectTabs, isPending: isSavingTabs } =
-    useUpdateProjectTabs(projectId);
+  const { mutate: updateFunctionalModules, isPending: isSavingFunc } =
+    useUpdateFunctionalModules(projectId);
+  const { mutate: updateNonFunctionalModules, isPending: isSavingNonFunc } =
+    useUpdateNonFunctionalModules(projectId);
 
-  const isSaving = isSavingTests || isSavingObjectives || isSavingTabs;
+  const isSaving =
+    isSavingTests || isSavingObjectives || isSavingFunc || isSavingNonFunc;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -215,44 +229,77 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
     if (!result) return;
 
     try {
+      // Test cases: merge with existing (dedup by testCaseId + module) so an
+      // import adds to the project instead of overwriting prior cases.
       if (importTestCases && result.testCases.length > 0) {
-        updateTestCases(result.testCases as TestCase[]);
-      }
-
-      if (importObjectives && result.objectives.length > 0) {
-        // Convert GeneratedObjective to TestObjective format
-        const testObjectives: TestObjective[] = result.objectives.map(
-          (obj) => ({
-            id:
-              obj.id ||
-              `obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            projectId: projectId,
-            description: obj.title
-              ? `**${obj.title}**\n${obj.description || ""}\n\n*Target: ${obj.targetValue || 100}${obj.unit || "%"}*`
-              : obj.description || "",
-            completed: false,
-          }),
+        const existing = existingTestCases || [];
+        const additions = (result.testCases as TestCase[]).filter(
+          (n) =>
+            !existing.some(
+              (e) => e.testCaseId === n.testCaseId && e.module === n.module,
+            ),
         );
-        updateObjectives(testObjectives);
+        updateTestCases([...existing, ...additions]);
       }
 
-      if (importTabs && result.tabs && result.tabs.length > 0) {
-        const tabs: ProjectTab[] = result.tabs.map((t) => ({
+      // Objectives: merge with existing (dedup by description)
+      if (importObjectives && result.objectives.length > 0) {
+        const existing = existingObjectives || [];
+        const newObjectives: TestObjective[] = result.objectives.map((obj) => ({
           id:
-            t.id ||
-            `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          projectId,
-          name: t.name || "Custom Tab",
-          slug: t.slug || "custom-tab",
-          description: t.description,
-          icon: t.icon,
-          order: t.order || 0,
-          isDefault: !!t.isDefault,
-          aiGenerated: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+            obj.id ||
+            `obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          projectId: projectId,
+          description: obj.title
+            ? `**${obj.title}**\n${obj.description || ""}\n\n*Target: ${obj.targetValue || 100}${obj.unit || "%"}*`
+            : obj.description || "",
+          completed: false,
         }));
-        updateProjectTabs(tabs);
+        const additions = newObjectives.filter(
+          (n) => !existing.some((e) => e.description === n.description),
+        );
+        updateObjectives([...existing, ...additions]);
+      }
+
+      // Suggested categories become Functional / Non-Functional testing modules
+      // (not sidebar tabs), so their test cases appear on the matching page.
+      if (importModules && result.tabs && result.tabs.length > 0) {
+        const now = new Date();
+        const existingFunc = functionalModules || [];
+        const existingNonFunc = nonFunctionalModules || [];
+        const funcAdd: TestingModule[] = [];
+        const nonFuncAdd: TestingModule[] = [];
+
+        result.tabs.forEach((tab) => {
+          const name = (tab.name || "").trim();
+          if (!name) return;
+          const isNonFunctional = isNonFunctionalName(`${name} ${tab.slug || ""}`);
+          const target = isNonFunctional ? existingNonFunc : existingFunc;
+          const addList = isNonFunctional ? nonFuncAdd : funcAdd;
+          // Skip if a module with this name already exists or is already queued
+          const exists = [...target, ...addList].some(
+            (m) => m.name.toLowerCase() === name.toLowerCase(),
+          );
+          if (exists) return;
+          addList.push({
+            id: crypto.randomUUID(),
+            projectId,
+            moduleType: isNonFunctional ? "non-functional" : "functional",
+            name,
+            slug: tab.slug || slugify(name),
+            description: tab.description,
+            icon: tab.icon,
+            order: target.length + addList.length,
+            isDefault: false,
+            createdAt: now,
+            updatedAt: now,
+          });
+        });
+
+        if (funcAdd.length > 0)
+          updateFunctionalModules([...existingFunc, ...funcAdd]);
+        if (nonFuncAdd.length > 0)
+          updateNonFunctionalModules([...existingNonFunc, ...nonFuncAdd]);
       }
 
       setIsSuccess(true);
@@ -375,14 +422,14 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
                 <div className="flex items-center gap-2">
                   <Sparkles size={14} className="text-purple-600" />
                   <p className="text-xs font-bold text-gray-700">
-                    Suggested Tabs ({result.tabs.length})
+                    Suggested Modules ({result.tabs.length})
                   </p>
                 </div>
                 <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={importTabs}
-                    onChange={(e) => setImportTabs(e.target.checked)}
+                    checked={importModules}
+                    onChange={(e) => setImportModules(e.target.checked)}
                     className="rounded"
                   />
                   Import
@@ -520,7 +567,7 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
               disabled={
                 isSaving ||
                 isSuccess ||
-                (!importTestCases && !importObjectives && !importTabs)
+                (!importTestCases && !importObjectives && !importModules)
               }
               className={cn(
                 "flex-1 rounded-xl gap-2 cursor-pointer transition-all duration-300",
