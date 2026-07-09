@@ -11,6 +11,8 @@ import {
   FunctionalModule,
   FunctionalModuleTemplate,
 } from "@/types/functional-module";
+import { TestRun } from "@/types/test-run";
+import { AuditEntry } from "@/types/audit";
 import { supabase, getSessionId, isSupabaseEnabled } from "./supabase";
 import {
   setSyncing,
@@ -39,6 +41,8 @@ const STORAGE_KEYS = {
   NON_FUNCTIONAL_MODULES: "credit_bureau_non_functional_modules",
   NON_FUNCTIONAL_MODULE_TEMPLATES:
     "credit_bureau_non_functional_module_templates",
+  TEST_RUNS: "credit_bureau_test_runs",
+  AUDIT_LOG: "credit_bureau_audit_log",
   LAST_UPDATED: "credit_bureau_last_updated",
 };
 
@@ -547,6 +551,43 @@ export const loadNonFunctionalModuleTemplates = async (
     [],
     projectId,
   );
+};
+
+// --- Test Runs (§9, §11) ---
+export const saveTestRuns = async (
+  runs: TestRun[],
+  projectId?: string,
+): Promise<boolean> => {
+  return saveToCloud(STORAGE_KEYS.TEST_RUNS, runs, projectId);
+};
+
+export const loadTestRuns = async (
+  projectId?: string,
+): Promise<TestRun[]> => {
+  return loadFromCloud<TestRun[]>(STORAGE_KEYS.TEST_RUNS, [], projectId);
+};
+
+// --- Audit Log (§28) ---
+export const saveAuditLog = async (
+  entries: AuditEntry[],
+  projectId?: string,
+): Promise<boolean> => {
+  return saveToCloud(STORAGE_KEYS.AUDIT_LOG, entries, projectId);
+};
+
+export const loadAuditLog = async (
+  projectId?: string,
+): Promise<AuditEntry[]> => {
+  return loadFromCloud<AuditEntry[]>(STORAGE_KEYS.AUDIT_LOG, [], projectId);
+};
+
+// Append one entry to the (append-only) audit log for a project.
+export const appendAuditEntry = async (
+  entry: AuditEntry,
+  projectId?: string,
+): Promise<boolean> => {
+  const existing = await loadAuditLog(projectId);
+  return saveAuditLog([entry, ...existing], projectId);
 };
 
 export const getLastUpdated = (): string | null => {

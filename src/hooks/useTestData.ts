@@ -24,8 +24,12 @@ import {
   saveNonFunctionalModules,
   loadNonFunctionalModuleTemplates,
   saveNonFunctionalModuleTemplates,
+  loadTestRuns,
+  saveTestRuns,
+  loadAuditLog,
 } from "@/lib/cloudStorage";
 import { ProjectTab } from "@/types/project";
+import { TestRun } from "@/types/test-run";
 import {
   FunctionalModule,
   FunctionalModuleTemplate,
@@ -247,6 +251,36 @@ export function useUpdateNonFunctionalModules(projectId: string) {
         queryKey: ["nonFunctionalModules", projectId],
       });
     },
+  });
+}
+
+// --- Test Runs ---
+
+export function useTestRuns(projectId: string) {
+  return useQuery({
+    queryKey: ["testRuns", projectId],
+    queryFn: () => loadTestRuns(projectId),
+    enabled: !!projectId,
+  });
+}
+
+export function useUpdateTestRuns(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (runs: TestRun[]) => saveTestRuns(runs, projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["testRuns", projectId] });
+    },
+  });
+}
+
+// --- Audit Log ---
+
+export function useAuditLog(projectId: string) {
+  return useQuery({
+    queryKey: ["auditLog", projectId],
+    queryFn: () => loadAuditLog(projectId),
+    enabled: !!projectId,
   });
 }
 

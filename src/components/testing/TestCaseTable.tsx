@@ -1,9 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { TestCase, TestStatus, RiskLevel } from "@/types/test-case";
+import {
+  TestCase,
+  TestStatus,
+  RiskLevel,
+  FinancialAssertion,
+} from "@/types/test-case";
 import { Badge } from "@/components/ui/badge";
 import RiskBadge from "@/components/testing/RiskBadge";
+import {
+  FinancialResultChip,
+  FinancialAssertionEditor,
+} from "@/components/testing/FinancialAssertionField";
+import { hasFinancialData } from "@/lib/financial";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -191,6 +201,16 @@ export default function TestCaseTable({
                 </div>
               </div>
 
+              {editingId !== testCase.id &&
+                hasFinancialData(testCase.financial) && (
+                  <div className="bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-100/50">
+                    <Label className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.15em] mb-1 block">
+                      Financial Accuracy
+                    </Label>
+                    <FinancialResultChip financial={testCase.financial} />
+                  </div>
+                )}
+
               {editingId === testCase.id && (
                 <div className="pt-2 space-y-4">
                   <div className="bg-primary/5 p-3 rounded-xl border border-primary/10">
@@ -242,6 +262,12 @@ export default function TestCaseTable({
                       <option value="low">Low</option>
                     </select>
                   </div>
+                  <FinancialAssertionEditor
+                    value={editData.financial}
+                    onChange={(financial: FinancialAssertion) =>
+                      setEditData({ ...editData, financial })
+                    }
+                  />
                   <div>
                     <Label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1.5 block">
                       Internal Comments
@@ -328,6 +354,9 @@ export default function TestCaseTable({
               </th>
               <th className="p-3 text-left text-sm font-bold text-gray-900">
                 Comments
+              </th>
+              <th className="p-3 text-left text-sm font-bold text-gray-900">
+                Financial
               </th>
               <th className="p-3 text-left text-sm font-bold text-gray-900 last:rounded-tr-lg">
                 Actions
@@ -488,6 +517,18 @@ export default function TestCaseTable({
                     <span className="text-gray-500 italic">
                       {testCase.comments || "-"}
                     </span>
+                  )}
+                </td>
+                <td className="p-3 min-w-55">
+                  {editingId === testCase.id ? (
+                    <FinancialAssertionEditor
+                      value={editData.financial}
+                      onChange={(financial: FinancialAssertion) =>
+                        setEditData({ ...editData, financial })
+                      }
+                    />
+                  ) : (
+                    <FinancialResultChip financial={testCase.financial} />
                   )}
                 </td>
                 <td className="p-3">
