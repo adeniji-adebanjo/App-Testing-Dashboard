@@ -107,14 +107,12 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to analyze PRD");
-      }
+      const data = await response.json().catch(() => null);
 
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error);
+      if (!response.ok || !data || data.success === false || data.error) {
+        throw new Error(
+          data?.error || `Failed to analyze PRD (HTTP ${response.status})`,
+        );
       }
 
       // Validate and normalize: Ensure test case modules match tab names
