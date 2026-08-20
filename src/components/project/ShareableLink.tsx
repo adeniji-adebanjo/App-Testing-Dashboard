@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Share2, Copy, Check, ExternalLink, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { copyToClipboard } from "@/lib/clipboard";
 
 interface ShareableLinkProps {
   projectId: string;
@@ -28,12 +29,9 @@ export function ShareableLink({ projectId, projectName }: ShareableLinkProps) {
       : `/public/projects/${projectId}`;
 
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(publicUrl);
+    if (await copyToClipboard(publicUrl)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
     }
   };
 
