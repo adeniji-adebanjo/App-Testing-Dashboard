@@ -87,3 +87,11 @@ export interface UpdateProjectInput {
   icon?: string;
   documentVersion?: string;
 }
+
+/**
+ * Maximum characters allowed in a project description. Descriptions are shown
+ * clamped (two lines on the dashboard cards, three on the project header), so
+ * capping the input keeps card heights uniform instead of letting one long
+ * description stretch the grid.
+ */
+export const DESCRIPTION_MAX_LENGTH = 300;

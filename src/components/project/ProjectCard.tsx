@@ -98,11 +98,14 @@ export default function ProjectCard({ project }: ProjectCardProps) {
               {project.status}
             </Badge>
           </div>
-          <CardTitle className="text-xl group-hover:text-primary transition-colors flex items-center justify-between">
-            {project.name}
-            <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+          <CardTitle className="text-xl group-hover:text-primary transition-colors flex items-center justify-between gap-2">
+            <span className="min-w-0 flex-1 truncate">{project.name}</span>
+            <ArrowRight className="h-4 w-4 shrink-0 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
           </CardTitle>
-          <CardDescription className="line-clamp-2 min-h-[40px]">
+          <CardDescription
+            className="line-clamp-2 h-10 leading-5 break-words"
+            title={project.description}
+          >
             {project.description}
           </CardDescription>
         </CardHeader>

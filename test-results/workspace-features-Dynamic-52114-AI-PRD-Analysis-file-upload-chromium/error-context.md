@@ -1,0 +1,95 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e4]:
+      - heading "TestPortal" [level=1] [ref=e6]:
+        - link "TestPortal" [ref=e7] [cursor=pointer]:
+          - /url: /
+      - generic [ref=e9]:
+        - paragraph [ref=e10]: Current Project
+        - combobox [ref=e11]:
+          - generic:
+            - generic:
+              - img
+              - generic: Project Hub
+          - img [ref=e12]
+      - navigation [ref=e16]:
+        - paragraph [ref=e17]: Main Menu
+        - link "Project Hub" [ref=e18] [cursor=pointer]:
+          - /url: /dashboard
+          - generic [ref=e19]:
+            - img [ref=e20]
+            - generic [ref=e25]: Project Hub
+          - img [ref=e26]
+        - link "Executive Dashboard" [ref=e28] [cursor=pointer]:
+          - /url: /executive
+          - generic [ref=e29]:
+            - img [ref=e30]
+            - generic [ref=e32]: Executive Dashboard
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: AE
+          - generic [ref=e36]:
+            - generic [ref=e37]: aeben.adebanjo@gmail.com
+            - generic [ref=e38]:
+              - img [ref=e39]
+              - text: Executive Access
+        - button "Sign Out" [ref=e41] [cursor=pointer]:
+          - img [ref=e42]
+          - text: Sign Out
+        - generic [ref=e45]:
+          - generic [ref=e46]: v2.0.0
+          - generic [ref=e49]: Cloud Synced
+    - main [ref=e51]:
+      - generic [ref=e52]:
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - heading "Project Hub" [level=1] [ref=e55]
+            - paragraph [ref=e56]: Central management for all testing dashboards. Monitor progress, manage test cases, and track defects across your portfolio.
+          - link "Create New Project" [ref=e57] [cursor=pointer]:
+            - /url: /new-project
+            - img [ref=e58]
+            - text: Create New Project
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - img [ref=e61]
+            - textbox "Search projects..." [ref=e64]
+          - generic [ref=e65]:
+            - button "Filter" [ref=e66]:
+              - img [ref=e67]
+              - text: Filter
+            - generic [ref=e70]:
+              - button [ref=e71]:
+                - img [ref=e72]
+              - button [ref=e77]:
+                - img [ref=e78]
+        - generic [ref=e120]:
+          - generic [ref=e121]: "Coming Soon: PRD Auto-Checklist"
+          - heading "Accelerate your testing setup with AI" [level=2] [ref=e122]
+          - paragraph [ref=e123]: Upload your Product Requirement Documents (PRD) and let our intelligent engine generate comprehensive test cases and checklists automatically.
+          - button "Join the Waitlist" [ref=e124]
+  - generic [ref=e127]:
+    - img [ref=e129]
+    - button "Open Tanstack query devtools" [ref=e177] [cursor=pointer]:
+      - img [ref=e178]
+  - generic [ref=e226]:
+    - button "Scroll to top":
+      - img
+      - generic: Scroll to top
+  - generic [ref=e231] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e232]:
+      - img [ref=e233]
+    - generic [ref=e236]:
+      - button "Open issues overlay" [ref=e237]:
+        - generic [ref=e238]:
+          - generic [ref=e239]: "10"
+          - generic [ref=e240]: "11"
+        - generic [ref=e241]:
+          - text: Issue
+          - generic [ref=e242]: s
+      - button "Collapse issues badge" [ref=e243]:
+        - img [ref=e244]
+  - alert [ref=e246]
+```

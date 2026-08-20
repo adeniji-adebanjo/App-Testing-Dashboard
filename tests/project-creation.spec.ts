@@ -3,6 +3,42 @@ import { test, expect } from "@playwright/test";
 test.describe("Project Creation Flow", () => {
   test.use({ storageState: "playwright/.auth/user.json" });
 
+  test.beforeEach(async ({ page }) => {
+    const EXECUTIVE_EMAIL = "aeben.adebanjo@gmail.com";
+
+    // Mock Supabase Auth
+    await page.route("**/auth/v1/user*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "mock-user-id",
+          email: EXECUTIVE_EMAIL,
+          user_metadata: { is_executive: true },
+        }),
+      });
+    });
+
+    // Mock Supabase REST API
+    await page.route("**/rest/v1/**", async (route) => {
+      const method = route.request().method();
+      if (method === "GET") {
+        await route.fulfill({ status: 200, body: JSON.stringify([]) });
+      } else if (method === "POST") {
+        const body = route.request().postDataJSON();
+        await route.fulfill({
+          status: 201,
+          body: JSON.stringify({
+            ...body,
+            id: "next-project-id-" + Date.now(),
+          }),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+  });
+
   test("should complete the 4-step wizard and redirect to project workspace", async ({
     page,
   }) => {

@@ -91,7 +91,10 @@ export default function ProjectListItem({ project }: ProjectListItemProps) {
               {project.shortCode}
             </span>
           </div>
-          <p className="text-sm text-gray-500 line-clamp-1">
+          <p
+            className="text-sm text-gray-500 line-clamp-1 break-words"
+            title={project.description}
+          >
             {project.description}
           </p>
         </div>

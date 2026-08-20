@@ -24,6 +24,7 @@ import TestEnvironmentSetup from "@/components/testing/TestEnvironmentSetup";
 import SignOffSection from "@/components/testing/SignOffSection";
 import { PRDUploader } from "@/components/project/PRDUploader";
 import SeedLoanTestPack from "@/components/project/SeedLoanTestPack";
+import ProjectDescription from "@/components/project/ProjectDescription";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -74,12 +75,13 @@ export default function ProjectPage() {
             PROJECT OVERVIEW
             <div className="h-px w-6 sm:w-8 bg-primary/20" />
           </div>
-          <h2 className="text-3xl font-black tracking-tight text-gray-900 sm:text-5xl leading-tight">
+          <h2 className="text-3xl font-black tracking-tight text-gray-900 sm:text-5xl leading-tight break-words">
             {currentProject.name}
           </h2>
-          <p className="mt-3 text-gray-500 max-w-3xl leading-relaxed text-base sm:text-lg">
-            {currentProject.description}
-          </p>
+          <ProjectDescription
+            description={currentProject.description}
+            className="mt-3 text-base sm:text-lg"
+          />
         </div>
         <div
           className="w-full md:w-auto px-5 py-3 sm:px-6 sm:py-3 rounded-2xl text-white font-black flex items-center justify-center gap-2 shadow-2xl shadow-primary/20"

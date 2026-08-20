@@ -554,7 +554,7 @@ export default function PublicProjectAnalysisPage() {
                     </Badge>
                   </div>
                   {project.description && (
-                    <p className="text-sm text-gray-600 max-w-xl">
+                    <p className="text-sm text-gray-600 max-w-xl break-words">
                       {project.description}
                     </p>
                   )}

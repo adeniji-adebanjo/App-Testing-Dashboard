@@ -23,7 +23,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Project } from "@/types/project";
+import { DESCRIPTION_MAX_LENGTH, Project } from "@/types/project";
 
 const PROJECT_COLORS = [
   "#6366F1", // Indigo
@@ -320,21 +320,43 @@ export default function NewProjectPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">
-                      Description
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">
+                        Description
+                      </label>
+                      <span
+                        className={cn(
+                          "text-[10px] font-mono",
+                          (formData.description?.length || 0) >
+                            DESCRIPTION_MAX_LENGTH - 40
+                            ? "text-amber-500"
+                            : "text-gray-300",
+                        )}
+                      >
+                        {formData.description?.length || 0}/
+                        {DESCRIPTION_MAX_LENGTH}
+                      </span>
+                    </div>
                     <Textarea
                       value={formData.description || ""}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          description: e.target.value,
+                          description: e.target.value.slice(
+                            0,
+                            DESCRIPTION_MAX_LENGTH,
+                          ),
                         })
                       }
+                      maxLength={DESCRIPTION_MAX_LENGTH}
                       placeholder="Brief description of the project..."
                       rows={3}
                       className="bg-gray-50/50 border-gray-200 focus:bg-white resize-none"
                     />
+                    <p className="text-[10px] text-gray-400">
+                      Keep it short — only the first two lines are shown on the
+                      project cards.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -559,14 +581,14 @@ export default function NewProjectPage() {
                     style={{ backgroundColor: formData.color }}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-2xl font-black">
+                      <div className="w-16 h-16 shrink-0 rounded-2xl bg-white/20 flex items-center justify-center text-2xl font-black">
                         {formData.shortCode || "PRJ"}
                       </div>
-                      <div>
-                        <h3 className="text-xl font-black">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-xl font-black truncate">
                           {formData.name || "Project Name"}
                         </h3>
-                        <p className="text-white/70 text-sm mt-1">
+                        <p className="text-white/70 text-sm mt-1 line-clamp-2 break-words">
                           {formData.description || "Your project description"}
                         </p>
                       </div>

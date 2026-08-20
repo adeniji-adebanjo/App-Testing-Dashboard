@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Project } from "@/types/project";
+import { DESCRIPTION_MAX_LENGTH, Project } from "@/types/project";
 import { PRDUploader } from "@/components/project/PRDUploader";
 import { ProjectTabsManager } from "@/components/project/ProjectTabsManager";
 import { SyncStatusBadge } from "@/components/layout/SyncStatusBadge";
@@ -240,18 +240,42 @@ export default function ProjectSettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">
-                  Description
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">
+                    Description
+                  </label>
+                  <span
+                    className={cn(
+                      "text-[10px] font-mono",
+                      (formData.description?.length || 0) >
+                        DESCRIPTION_MAX_LENGTH - 40
+                        ? "text-amber-500"
+                        : "text-gray-300",
+                    )}
+                  >
+                    {formData.description?.length || 0}/{DESCRIPTION_MAX_LENGTH}
+                  </span>
+                </div>
                 <Textarea
                   value={formData.description || ""}
                   onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
+                    setFormData({
+                      ...formData,
+                      description: e.target.value.slice(
+                        0,
+                        DESCRIPTION_MAX_LENGTH,
+                      ),
+                    })
                   }
+                  maxLength={DESCRIPTION_MAX_LENGTH}
                   placeholder="Describe the project and its objectives"
                   rows={3}
                   className="bg-white/50 border-gray-200 focus:bg-white resize-none"
                 />
+                <p className="text-[10px] text-gray-400">
+                  Keep it short — only the first two lines are shown on the
+                  project cards.
+                </p>
               </div>
 
               <div className="space-y-2">

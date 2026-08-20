@@ -4,15 +4,78 @@ test.describe("Dynamic Workspace Features", () => {
   test.use({ storageState: "playwright/.auth/user.json" });
 
   test.beforeEach(async ({ page }) => {
-    // Navigate to a known test project or the first available one
-    await page.goto("/dashboard");
+    const EXECUTIVE_EMAIL = "aeben.adebanjo@gmail.com";
+    const MOCK_PROJECT_ID = "mock-project-id-123";
 
-    // Wait for projects to load
-    const projectCard = page
-      .getByRole("link")
-      .filter({ hasText: /View Dashboard/i })
-      .first();
-    await expect(projectCard).toBeVisible();
+    // Mock Supabase Auth
+    await page.route("**/auth/v1/user*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "mock-user-id",
+          email: EXECUTIVE_EMAIL,
+          user_metadata: { is_executive: true },
+        }),
+      });
+    });
+
+    // Mock Supabase REST API
+    await page.route("**/rest/v1/**", async (route) => {
+      const method = route.request().method();
+      const url = route.request().url();
+
+      if (method === "GET") {
+        if (url.includes("/projects")) {
+          await route.fulfill({
+            status: 200,
+            body: JSON.stringify([
+              {
+                id: MOCK_PROJECT_ID,
+                name: "Mock Project",
+                short_code: "MP",
+                description: "Mock Description",
+                project_type: "web",
+                tech_stack: ["React"],
+                target_users: ["Admin"],
+                status: "active",
+                phase: "testing",
+                color: "#6366F1",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                stats: {
+                  totalTestCases: 10,
+                  passed: 8,
+                  failed: 1,
+                  pending: 1,
+                  blocked: 0,
+                  defectsOpen: 1,
+                  defectsClosed: 2,
+                  passRate: 80,
+                },
+              },
+            ]),
+          });
+        } else {
+          await route.fulfill({ status: 200, body: JSON.stringify([]) });
+        }
+      } else if (method === "POST" || method === "PATCH" || method === "PUT") {
+        const body = route.request().postDataJSON();
+        await route.fulfill({
+          status: 201,
+          body: JSON.stringify({ ...body, id: "new-id-" + Date.now() }),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    // Navigate and verify we are on dashboard (session working)
+    await page.goto("/dashboard");
+    await expect(page).toHaveURL(/.*dashboard/);
+
+    const projectCard = page.getByRole("link", { name: "Mock Project" });
+    await expect(projectCard).toBeVisible({ timeout: 10000 });
     await projectCard.click();
   });
 

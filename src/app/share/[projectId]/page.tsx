@@ -150,7 +150,7 @@ export default function PrivateShareSummaryPage() {
             {project.name}
           </h2>
           {project.description && (
-            <p className="text-gray-500 mt-3 text-sm sm:text-base leading-relaxed font-medium">
+            <p className="text-gray-500 mt-3 text-sm sm:text-base leading-relaxed font-medium break-words">
               {project.description}
             </p>
           )}
