@@ -52,14 +52,15 @@ export const setOffline = () => {
 
 // Hook to use sync status in components
 export function useCloudSyncStatus() {
-  const [state, setState] = useState<CloudSyncState>(globalSyncState);
+  const [state, setState] = useState<CloudSyncState>(() =>
+    isSupabaseEnabled()
+      ? globalSyncState
+      : { status: "offline", lastSyncTime: null, error: null },
+  );
 
   useEffect(() => {
-    // Check if Supabase is enabled
-    if (!isSupabaseEnabled()) {
-      setState({ status: "offline", lastSyncTime: null, error: null });
-      return;
-    }
+    // Without Supabase the status stays "offline"; nothing to subscribe to.
+    if (!isSupabaseEnabled()) return;
 
     const updateState = () => {
       setState({ ...globalSyncState });

@@ -8,6 +8,7 @@ import {
 import { supabase, getSessionId, isSupabaseEnabled } from "./supabase";
 import { DEFAULT_PROJECTS } from "@/data/projects";
 import { setSynced, setSyncError } from "@/hooks/useCloudSyncStatus";
+import { computeProjectStats } from "./projectStats";
 
 const PROJECTS_STORAGE_KEY = "testing_portal_projects";
 
@@ -758,37 +759,10 @@ export const getProjectStats = async (
   // Import from cloudStorage to ensure we get the latest synced data
   const { loadTestCases, loadDefects } = await import("./cloudStorage");
 
-  // Load test cases for this project from cloud storage
-  const projectTestCases = await loadTestCases(projectId);
+  const [projectTestCases, projectDefects] = await Promise.all([
+    loadTestCases(projectId),
+    loadDefects(projectId),
+  ]);
 
-  // Load defects for this project from cloud storage
-  const projectDefects = await loadDefects(projectId);
-
-  const passed = projectTestCases.filter((tc) => tc.status === "pass").length;
-  const failed = projectTestCases.filter((tc) => tc.status === "fail").length;
-  const pending = projectTestCases.filter(
-    (tc) => tc.status === "pending",
-  ).length;
-  const blocked = projectTestCases.filter(
-    (tc) => tc.status === "blocked",
-  ).length;
-  const total = projectTestCases.length;
-
-  const defectsOpen = projectDefects.filter(
-    (d) => d.status === "open" || d.status === "in-progress",
-  ).length;
-  const defectsClosed = projectDefects.filter(
-    (d) => d.status === "resolved" || d.status === "closed",
-  ).length;
-
-  return {
-    totalTestCases: total,
-    passed,
-    failed,
-    pending,
-    blocked,
-    defectsOpen,
-    defectsClosed,
-    passRate: total > 0 ? Math.round((passed / total) * 100) : 0,
-  };
+  return computeProjectStats(projectTestCases, projectDefects);
 };

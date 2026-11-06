@@ -52,6 +52,39 @@ import {
   SuccessMetric,
   SignOff,
 } from "@/types/test-case";
+import { useToast } from "@/components/ui/toast";
+
+// Shared save mutation. cloudStorage save* functions resolve to false (rather
+// than throwing) when the cloud write fails, so that is turned into an error
+// here. On failure the attempted data is kept in the query cache - it is
+// already in localStorage - instead of refetching, which would overwrite the
+// user's change with the stale cloud copy.
+function useSaveMutation<T>(
+  queryKey: readonly unknown[],
+  save: (data: T) => Promise<boolean>,
+) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (data: T) => {
+      if (!(await save(data))) {
+        throw new Error("Cloud save failed");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+    onError: (_error, data) => {
+      queryClient.setQueryData(queryKey, data);
+      toast({
+        variant: "error",
+        title: "Not saved to the cloud",
+        description:
+          "Your change is stored on this device only. Check your connection or sign in again, then retry.",
+      });
+    },
+  });
+}
 
 // --- Test Cases ---
 
@@ -64,13 +97,9 @@ export function useTestCases(projectId: string) {
 }
 
 export function useUpdateTestCases(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (testCases: TestCase[]) => saveTestCases(testCases, projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["testCases", projectId] });
-    },
-  });
+  return useSaveMutation(["testCases", projectId], (testCases: TestCase[]) =>
+    saveTestCases(testCases, projectId),
+  );
 }
 
 // --- Defects ---
@@ -84,13 +113,9 @@ export function useDefects(projectId: string) {
 }
 
 export function useUpdateDefects(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (defects: Defect[]) => saveDefects(defects, projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["defects", projectId] });
-    },
-  });
+  return useSaveMutation(["defects", projectId], (defects: Defect[]) =>
+    saveDefects(defects, projectId),
+  );
 }
 
 // --- Objectives ---
@@ -104,14 +129,9 @@ export function useObjectives(projectId: string) {
 }
 
 export function useUpdateObjectives(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (objectives: TestObjective[]) =>
-      saveObjectives(objectives, projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["objectives", projectId] });
-    },
-  });
+  return useSaveMutation(["objectives", projectId], (objectives: TestObjective[]) =>
+    saveObjectives(objectives, projectId),
+  );
 }
 
 // --- Environments ---
@@ -125,14 +145,9 @@ export function useEnvironments(projectId: string) {
 }
 
 export function useUpdateEnvironments(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (environments: TestEnvironment[]) =>
-      saveEnvironments(environments, projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["environments", projectId] });
-    },
-  });
+  return useSaveMutation(["environments", projectId], (environments: TestEnvironment[]) =>
+    saveEnvironments(environments, projectId),
+  );
 }
 
 // --- Metrics ---
@@ -146,13 +161,9 @@ export function useMetrics(projectId: string) {
 }
 
 export function useUpdateMetrics(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (metrics: SuccessMetric[]) => saveMetrics(metrics, projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["metrics", projectId] });
-    },
-  });
+  return useSaveMutation(["metrics", projectId], (metrics: SuccessMetric[]) =>
+    saveMetrics(metrics, projectId),
+  );
 }
 
 // --- Sign Offs ---
@@ -166,13 +177,9 @@ export function useSignOffs(projectId: string) {
 }
 
 export function useUpdateSignOffs(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (signOffs: SignOff[]) => saveSignOffs(signOffs, projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["signOffs", projectId] });
-    },
-  });
+  return useSaveMutation(["signOffs", projectId], (signOffs: SignOff[]) =>
+    saveSignOffs(signOffs, projectId),
+  );
 }
 
 // --- Project Tabs ---
@@ -186,13 +193,9 @@ export function useProjectTabs(projectId: string) {
 }
 
 export function useUpdateProjectTabs(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (tabs: ProjectTab[]) => saveProjectTabs(tabs, projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projectTabs", projectId] });
-    },
-  });
+  return useSaveMutation(["projectTabs", projectId], (tabs: ProjectTab[]) =>
+    saveProjectTabs(tabs, projectId),
+  );
 }
 
 // --- Functional Modules ---
@@ -206,16 +209,9 @@ export function useFunctionalModules(projectId: string) {
 }
 
 export function useUpdateFunctionalModules(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (modules: FunctionalModule[]) =>
-      saveFunctionalModules(modules, projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["functionalModules", projectId],
-      });
-    },
-  });
+  return useSaveMutation(["functionalModules", projectId], (modules: FunctionalModule[]) =>
+    saveFunctionalModules(modules, projectId),
+  );
 }
 
 // --- Functional Module Templates ---
@@ -229,16 +225,9 @@ export function useFunctionalModuleTemplates(projectId: string) {
 }
 
 export function useUpdateFunctionalModuleTemplates(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (templates: FunctionalModuleTemplate[]) =>
-      saveFunctionalModuleTemplates(templates, projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["functionalModuleTemplates", projectId],
-      });
-    },
-  });
+  return useSaveMutation(["functionalModuleTemplates", projectId], (templates: FunctionalModuleTemplate[]) =>
+    saveFunctionalModuleTemplates(templates, projectId),
+  );
 }
 
 // --- Non-Functional Modules ---
@@ -252,16 +241,9 @@ export function useNonFunctionalModules(projectId: string) {
 }
 
 export function useUpdateNonFunctionalModules(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (modules: FunctionalModule[]) =>
-      saveNonFunctionalModules(modules, projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["nonFunctionalModules", projectId],
-      });
-    },
-  });
+  return useSaveMutation(["nonFunctionalModules", projectId], (modules: FunctionalModule[]) =>
+    saveNonFunctionalModules(modules, projectId),
+  );
 }
 
 // --- Test Runs ---
@@ -275,13 +257,9 @@ export function useTestRuns(projectId: string) {
 }
 
 export function useUpdateTestRuns(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (runs: TestRun[]) => saveTestRuns(runs, projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["testRuns", projectId] });
-    },
-  });
+  return useSaveMutation(["testRuns", projectId], (runs: TestRun[]) =>
+    saveTestRuns(runs, projectId),
+  );
 }
 
 // --- Requirements ---
@@ -295,14 +273,9 @@ export function useRequirements(projectId: string) {
 }
 
 export function useUpdateRequirements(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (requirements: Requirement[]) =>
-      saveRequirements(requirements, projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["requirements", projectId] });
-    },
-  });
+  return useSaveMutation(["requirements", projectId], (requirements: Requirement[]) =>
+    saveRequirements(requirements, projectId),
+  );
 }
 
 // --- Releases ---
@@ -316,13 +289,9 @@ export function useReleases(projectId: string) {
 }
 
 export function useUpdateReleases(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (releases: Release[]) => saveReleases(releases, projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["releases", projectId] });
-    },
-  });
+  return useSaveMutation(["releases", projectId], (releases: Release[]) =>
+    saveReleases(releases, projectId),
+  );
 }
 
 // --- Report Snapshots ---
@@ -336,16 +305,9 @@ export function useReportSnapshots(projectId: string) {
 }
 
 export function useUpdateReportSnapshots(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (snapshots: ReportSnapshot[]) =>
-      saveReportSnapshots(snapshots, projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["reportSnapshots", projectId],
-      });
-    },
-  });
+  return useSaveMutation(["reportSnapshots", projectId], (snapshots: ReportSnapshot[]) =>
+    saveReportSnapshots(snapshots, projectId),
+  );
 }
 
 // --- Monitoring Events ---
@@ -379,14 +341,7 @@ export function useNonFunctionalModuleTemplates(projectId: string) {
 }
 
 export function useUpdateNonFunctionalModuleTemplates(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (templates: FunctionalModuleTemplate[]) =>
-      saveNonFunctionalModuleTemplates(templates, projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["nonFunctionalModuleTemplates", projectId],
-      });
-    },
-  });
+  return useSaveMutation(["nonFunctionalModuleTemplates", projectId], (templates: FunctionalModuleTemplate[]) =>
+    saveNonFunctionalModuleTemplates(templates, projectId),
+  );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import {
   Card,
@@ -35,13 +35,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { getProject } from "@/lib/projectStorage";
-import {
-  loadTestCases,
-  loadDefects,
-  loadObjectives,
-  loadEnvironments,
-} from "@/lib/cloudStorage";
+import { fetchSharedProject } from "@/lib/shareLinks";
 import { Project } from "@/types/project";
 import {
   TestCase,
@@ -205,6 +199,7 @@ export default function PrivateShareAnalysisPage() {
   const { projectId } = useParams();
   const router = useRouter();
   const id = projectId as string;
+  const token = useSearchParams().get("t");
   const reportRef = useRef<HTMLDivElement>(null);
 
   const [project, setProject] = useState<Project | null>(null);
@@ -219,28 +214,19 @@ export default function PrivateShareAnalysisPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const foundProject = await getProject(id);
+        // Token-checked server read - works for guests without an account
+        const snapshot = await fetchSharedProject(id, token);
 
-        if (!foundProject) {
-          setError("Project not found");
+        if (!snapshot) {
+          setError("Project not found or private link expired");
           return;
         }
 
-        setProject(foundProject);
-
-        // Load all test data
-        const [testCasesData, defectsData, objectivesData, environmentsData] =
-          await Promise.all([
-            loadTestCases(id),
-            loadDefects(id),
-            loadObjectives(id),
-            loadEnvironments(id),
-          ]);
-
-        setTestCases(testCasesData);
-        setDefects(defectsData);
-        setObjectives(objectivesData);
-        setEnvironments(environmentsData);
+        setProject(snapshot.project);
+        setTestCases(snapshot.testCases);
+        setDefects(snapshot.defects);
+        setObjectives(snapshot.objectives);
+        setEnvironments(snapshot.environments);
       } catch (err) {
         setError("Failed to load project data");
         console.error(err);
@@ -250,7 +236,7 @@ export default function PrivateShareAnalysisPage() {
     };
 
     loadData();
-  }, [id]);
+  }, [id, token]);
 
   // Generate PDF report
   const handleExportPDF = async () => {
@@ -466,7 +452,7 @@ export default function PrivateShareAnalysisPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Link
-                href={`/share/${id}`}
+                href={`/share/${id}?t=${encodeURIComponent(token ?? "")}`}
                 className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <ArrowLeft size={20} className="text-gray-600" />

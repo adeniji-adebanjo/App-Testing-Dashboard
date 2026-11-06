@@ -6,7 +6,7 @@ import {
 } from "@/types/test-case";
 
 // Export as JSON
-export const exportAsJSON = (data: any, fileName?: string): void => {
+export const exportAsJSON = (data: unknown, fileName?: string): void => {
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);

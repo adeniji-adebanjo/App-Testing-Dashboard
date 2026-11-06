@@ -235,13 +235,20 @@ export const saveToCloud = async <T>(
       payload.project_id = projectId;
     }
 
-    // Check if record exists
-    const { data: existing } = await supabase!
+    // Find the row to update. Project data is shared by all signed-in users and
+    // loadFromCloud reads the most recent row for the data_type regardless of
+    // owner, so write to that same row; otherwise each user would update their
+    // own copy while everyone reads whichever was saved last.
+    let existingQuery = supabase!
       .from("test_data")
       .select("id")
-      .eq("user_id", userId)
-      .eq("data_type", storageKey)
-      .single();
+      .eq("data_type", storageKey);
+    if (!projectId) existingQuery = existingQuery.eq("user_id", userId);
+    const { data: existing, error: existingError } = await existingQuery
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existingError) throw existingError;
 
     if (existing) {
       // Update existing

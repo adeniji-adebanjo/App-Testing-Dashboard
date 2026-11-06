@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { isUuid } from "./ingest";
 
 // Rosabon QA Framework §23 - server-side data access for the automation API.
 // The app persists each project's data as JSON blobs in the `test_data` table
@@ -6,18 +7,18 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 // ingestion, webhooks, release-readiness gate) read/write those same blobs
 // without the browser-only cloudStorage layer.
 //
-// Prefers SUPABASE_SERVICE_ROLE_KEY (bypasses RLS for trusted server calls);
-// falls back to the anon key. Set the service-role key in the deploy env for
-// reliable server writes.
+// Requires SUPABASE_SERVICE_ROLE_KEY (bypasses RLS for trusted server calls).
+// There is deliberately no anon-key fallback: RLS blocks anonymous access, so
+// the store reports itself as not configured instead of failing on each write.
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SERVICE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  "";
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 // Storage keys mirror STORAGE_KEYS in lib/cloudStorage.ts.
 export const SERVER_KEYS = {
+  TEST_CASES: "credit_bureau_test_cases",
+  OBJECTIVES: "credit_bureau_objectives",
+  ENVIRONMENTS: "credit_bureau_environments",
   TEST_RUNS: "credit_bureau_test_runs",
   RELEASES: "credit_bureau_releases",
   DEFECTS: "credit_bureau_defects",
@@ -39,6 +40,20 @@ export function getServerSupabase(): SupabaseClient | null {
 
 export function isServerStoreEnabled(): boolean {
   return !!getServerSupabase();
+}
+
+// True when projectId is a UUID belonging to an existing project. Server routes
+// call this before reading/writing so a shared token can't create orphan blobs
+// or address arbitrary data_type keys.
+export async function projectExists(projectId: string): Promise<boolean> {
+  const sb = getServerSupabase();
+  if (!sb || !isUuid(projectId)) return false;
+  const { data, error } = await sb
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .maybeSingle();
+  return !error && !!data;
 }
 
 function dataType(projectId: string, storageKey: string): string {
@@ -108,13 +123,7 @@ export async function writeProjectData<T>(
     updated_at: nowIso,
   };
   if (project?.user_id) payload.user_id = project.user_id;
-  if (
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      projectId,
-    )
-  ) {
-    payload.project_id = projectId;
-  }
+  if (isUuid(projectId)) payload.project_id = projectId;
 
   const { error } = await sb.from("test_data").insert([payload]);
   return error ? { ok: false, error: error.message } : { ok: true };

@@ -79,6 +79,27 @@ export interface IngestPayload {
   runId?: string; // let the runner supply a stable id (e.g. CI run id)
 }
 
+// Bounds on untrusted input. Every run is appended to a single JSON blob, so an
+// unbounded payload would bloat every subsequent read of the project's runs.
+export const MAX_RESULTS = 5000;
+export const MAX_STORED_RUNS = 200;
+const MAX_ID_LENGTH = 200;
+const MAX_TEXT_LENGTH = 2000;
+
+function checkOptionalString(
+  value: unknown,
+  field: string,
+  max: number,
+  errors: string[],
+): void {
+  if (value === undefined) return;
+  if (typeof value !== "string") {
+    errors.push(`${field} must be a string.`);
+  } else if (value.length > max) {
+    errors.push(`${field} must be at most ${max} characters.`);
+  }
+}
+
 export type ValidationResult =
   | { ok: true; value: IngestPayload }
   | { ok: false; errors: string[] };
@@ -96,8 +117,11 @@ export function validateIngestPayload(body: unknown): ValidationResult {
     errors.push("`results` must be an array.");
   } else if (b.results.length === 0) {
     errors.push("`results` must contain at least one result.");
+  } else if (b.results.length > MAX_RESULTS) {
+    errors.push(`\`results\` must contain at most ${MAX_RESULTS} results.`);
   } else {
     b.results.forEach((r, i) => {
+      if (errors.length >= 50) return; // don't echo thousands of errors back
       if (typeof r !== "object" || r === null) {
         errors.push(`results[${i}] must be an object.`);
         return;
@@ -105,10 +129,18 @@ export function validateIngestPayload(body: unknown): ValidationResult {
       const row = r as Record<string, unknown>;
       if (typeof row.testCaseId !== "string" || row.testCaseId.trim() === "") {
         errors.push(`results[${i}].testCaseId is required (non-empty string).`);
+      } else if (row.testCaseId.length > MAX_ID_LENGTH) {
+        errors.push(
+          `results[${i}].testCaseId must be at most ${MAX_ID_LENGTH} characters.`,
+        );
       }
       if (typeof row.status !== "string" || row.status.trim() === "") {
         errors.push(`results[${i}].status is required (non-empty string).`);
       }
+      checkOptionalString(row.caseKey, `results[${i}].caseKey`, MAX_ID_LENGTH, errors);
+      checkOptionalString(row.module, `results[${i}].module`, MAX_TEXT_LENGTH, errors);
+      checkOptionalString(row.scenario, `results[${i}].scenario`, MAX_TEXT_LENGTH, errors);
+      checkOptionalString(row.notes, `results[${i}].notes`, MAX_TEXT_LENGTH, errors);
       if (
         row.riskLevel !== undefined &&
         !VALID_RISK_LEVELS.includes(row.riskLevel as RiskLevel)
@@ -136,6 +168,13 @@ export function validateIngestPayload(body: unknown): ValidationResult {
     errors.push(
       `\`environment\` must be one of ${VALID_ENVIRONMENTS.join(", ")}.`,
     );
+  }
+
+  checkOptionalString(b.name, "`name`", MAX_TEXT_LENGTH, errors);
+  checkOptionalString(b.runId, "`runId`", MAX_ID_LENGTH, errors);
+  checkOptionalString(b.startedAt, "`startedAt`", MAX_ID_LENGTH, errors);
+  if (typeof b.startedAt === "string" && isNaN(Date.parse(b.startedAt))) {
+    errors.push("`startedAt` must be an ISO timestamp.");
   }
 
   if (errors.length > 0) return { ok: false, errors };

@@ -30,6 +30,7 @@ import {
 } from "@/hooks/useTestData";
 import { TestingModule } from "@/types/functional-module";
 import { isNonFunctionalName, slugify } from "@/lib/moduleClassification";
+import { getAuthHeaders } from "@/lib/auth";
 
 interface PRDUploaderProps {
   projectId: string;
@@ -113,6 +114,7 @@ export function PRDUploader({ projectId, onComplete }: PRDUploaderProps) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(await getAuthHeaders()),
         },
         body: JSON.stringify({
           content,

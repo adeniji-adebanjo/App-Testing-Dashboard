@@ -124,29 +124,33 @@ DO $$ BEGIN
 END $$;
 
 -- 7. RLS POLICIES (Security)
-ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.project_tabs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.functional_modules ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.functional_module_templates ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.default_test_scenarios ENABLE ROW LEVEL SECURITY;
-
+-- Authenticated users only; guests reach shared projects via /api/share
+-- (service role + share_token). For an existing database, run
+-- migrations/20261006_lock_down_rls.sql.
 DO $$ BEGIN
-  -- Shared policy for all public tables in this app
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'projects' AND policyname = 'Allow public all access') THEN
-    CREATE POLICY "Allow public all access" ON public.projects FOR ALL TO public USING (true) WITH CHECK (true);
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='share_token') THEN
+    ALTER TABLE public.projects ADD COLUMN share_token text UNIQUE;
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'project_tabs' AND policyname = 'Allow public all access') THEN
-    CREATE POLICY "Allow public all access" ON public.project_tabs FOR ALL TO public USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'functional_modules' AND policyname = 'Allow public all access') THEN
-    CREATE POLICY "Allow public all access" ON public.functional_modules FOR ALL TO public USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'functional_module_templates' AND policyname = 'Allow public all access') THEN
-    CREATE POLICY "Allow public all access" ON public.functional_module_templates FOR ALL TO public USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'default_test_scenarios' AND policyname = 'Allow public all access') THEN
-    CREATE POLICY "Allow public all access" ON public.default_test_scenarios FOR ALL TO public USING (true) WITH CHECK (true);
-  END IF;
+END $$;
+
+DO $$
+DECLARE
+  t text;
+BEGIN
+  FOR t IN SELECT unnest(ARRAY[
+    'projects', 'project_tabs', 'functional_modules',
+    'functional_module_templates', 'default_test_scenarios',
+    'test_data', 'users'
+  ]) LOOP
+    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
+    EXECUTE format('DROP POLICY IF EXISTS "Allow public all access" ON public.%I', t);
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = t AND policyname = 'Authenticated full access') THEN
+      EXECUTE format(
+        'CREATE POLICY "Authenticated full access" ON public.%I FOR ALL TO authenticated USING (true) WITH CHECK (true)',
+        t
+      );
+    END IF;
+  END LOOP;
 END $$;
 
 -- 8. AUTO-UPDATE TRIGGERS

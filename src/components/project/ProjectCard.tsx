@@ -43,11 +43,6 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   const [shareOpen, setShareOpen] = useState(false);
   const Icon = iconMap[project.icon as keyof typeof iconMap] || Monitor;
 
-  const shareUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/share/${project.id}`
-      : `/share/${project.id}`;
-
   const statusColors = {
     active: "bg-green-500/10 text-green-500 border-green-500/20",
     completed: "bg-blue-500/10 text-blue-500 border-blue-500/20",
@@ -214,7 +209,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       <ShareLinkDialog
         open={shareOpen}
         onOpenChange={setShareOpen}
-        url={shareUrl}
+        projectId={project.id}
         projectName={project.name}
         shortCode={project.shortCode}
         color={project.color}

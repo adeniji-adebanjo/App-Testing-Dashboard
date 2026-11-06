@@ -308,7 +308,7 @@ export default function MetricsDashboard() {
           <div className="space-y-2">
             <h3 className="text-xl font-black">Overall Project Performance</h3>
             <p className="text-gray-400 text-sm max-w-sm">
-              We've successfully validated {metStats.met} out of{" "}
+              We&apos;ve successfully validated {metStats.met} out of{" "}
               {metrics.length} critical success criteria for{" "}
               {currentProject?.name}.
             </p>

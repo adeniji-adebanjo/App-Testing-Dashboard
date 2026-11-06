@@ -4,6 +4,7 @@ import {
   isServerStoreEnabled,
   SERVER_KEYS,
 } from "@/lib/serverStore";
+import { requireApiToken } from "@/lib/apiAuth";
 import { TestRun } from "@/types/test-run";
 import { Defect } from "@/types/test-case";
 import {
@@ -17,13 +18,12 @@ import {
 // A pipeline calls this before deploy; if `ready` is false it should block.
 //
 // GET /api/release-readiness?projectId=<id>&version=<optional>
-// Auth: send header `x-api-token: <INGEST_API_TOKEN>` when configured.
+// Auth: send header `x-api-token: <INGEST_API_TOKEN>`. Disabled (503) when the
+// token is not configured.
 
 export async function GET(request: NextRequest) {
-  const token = process.env.INGEST_API_TOKEN;
-  if (token && request.headers.get("x-api-token") !== token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = requireApiToken(request, process.env.INGEST_API_TOKEN);
+  if (denied) return denied;
   if (!isServerStoreEnabled()) {
     return NextResponse.json(
       { error: "Server store not configured" },
@@ -91,8 +91,9 @@ export async function GET(request: NextRequest) {
       })),
     });
   } catch (error) {
+    console.error("Failed to evaluate readiness", error);
     return NextResponse.json(
-      { error: "Failed to evaluate readiness", details: String(error) },
+      { error: "Failed to evaluate readiness" },
       { status: 500 },
     );
   }

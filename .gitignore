@@ -47,3 +47,9 @@ next-env.d.ts
 
 # supabase
 /supabase/
+
+# Playwright artifacts (auth state contains session data)
+/playwright/.auth/
+/playwright-report/
+/test-results/
+/blob-report/

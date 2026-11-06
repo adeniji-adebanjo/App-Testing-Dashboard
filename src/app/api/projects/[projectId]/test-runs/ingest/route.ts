@@ -5,7 +5,9 @@ import {
   toTestRun,
   projectDataType,
   isUuid,
+  MAX_STORED_RUNS,
 } from "@/lib/ingest";
+import { requireApiToken } from "@/lib/apiAuth";
 import { TestRun } from "@/types/test-run";
 
 // Service-role writes + crypto.randomUUID require the Node runtime (not edge).
@@ -19,20 +21,17 @@ interface RouteContext {
 //
 // Accepts an IngestPayload from an external test runner, appends it as a new
 // TestRun cycle for the project, and returns the run's summary stats. Auth is a
-// shared secret in the `x-ingest-token` header (compared against INGEST_TOKEN).
+// shared secret in the `x-ingest-token` header (compared against INGEST_TOKEN in
+// constant time). projectId must be the UUID of an existing project.
 export async function POST(req: NextRequest, ctx: RouteContext) {
   const { projectId } = await ctx.params;
 
   // --- 1. Auth -------------------------------------------------------------
-  const expectedToken = process.env.INGEST_TOKEN;
-  if (!expectedToken) {
-    return NextResponse.json(
-      { error: "Ingest is not configured on the server (INGEST_TOKEN unset)." },
-      { status: 500 },
-    );
-  }
-  if (req.headers.get("x-ingest-token") !== expectedToken) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  const denied = requireApiToken(req, process.env.INGEST_TOKEN, "x-ingest-token");
+  if (denied) return denied;
+
+  if (!isUuid(projectId)) {
+    return NextResponse.json({ error: "Invalid projectId." }, { status: 400 });
   }
 
   // --- 2. Parse + validate -------------------------------------------------
@@ -71,6 +70,20 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     );
   }
 
+  const { data: project, error: projectError } = await admin
+    .from("projects")
+    .select("id, user_id")
+    .eq("id", projectId)
+    .maybeSingle();
+
+  if (projectError) {
+    console.error("Ingest: project lookup failed", projectError);
+    return NextResponse.json({ error: "Storage error." }, { status: 502 });
+  }
+  if (!project) {
+    return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  }
+
   const dataType = projectDataType(projectId);
 
   const { data: existing, error: readError } = await admin
@@ -82,8 +95,9 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     .maybeSingle();
 
   if (readError) {
+    console.error("Ingest: failed to read existing runs", readError);
     return NextResponse.json(
-      { error: "Failed to read existing runs.", details: readError.message },
+      { error: "Failed to read existing runs." },
       { status: 502 },
     );
   }
@@ -91,7 +105,8 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
   const existingRuns: TestRun[] = Array.isArray(existing?.data)
     ? (existing!.data as TestRun[])
     : [];
-  const nextRuns = [run, ...existingRuns]; // newest first
+  // Newest first; capped so the runs blob doesn't grow without bound.
+  const nextRuns = [run, ...existingRuns].slice(0, MAX_STORED_RUNS);
 
   if (existing) {
     // Update the existing runs row in place, preserving its user_id.
@@ -101,42 +116,31 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
       .eq("id", existing.id);
 
     if (updateError) {
+      console.error("Ingest: failed to save run", updateError);
       return NextResponse.json(
-        { error: "Failed to save run.", details: updateError.message },
+        { error: "Failed to save run." },
         { status: 502 },
       );
     }
   } else {
-    // No runs row yet. test_data.user_id references a real user, so borrow one
-    // from any existing row for this project (all keys are `${projectId}_*`),
-    // or fall back to an explicit INGEST_USER_ID.
-    const userId = await resolveUserId(admin, projectId);
-    if (!userId) {
-      return NextResponse.json(
-        {
-          error:
-            "No existing data found for this project to attach the run to. " +
-            "Create the project's first data in the app, or set INGEST_USER_ID.",
-        },
-        { status: 422 },
-      );
-    }
+    // No runs row yet. test_data.user_id references a real user, so attribute
+    // the row to the project's owner (or an explicit INGEST_USER_ID override).
+    const userId = process.env.INGEST_USER_ID || project.user_id;
 
-    const insertRow: Record<string, unknown> = {
-      user_id: userId,
-      data_type: dataType,
-      data: nextRuns,
-      updated_at: now,
-    };
-    if (isUuid(projectId)) insertRow.project_id = projectId;
-
-    const { error: insertError } = await admin
-      .from("test_data")
-      .insert([insertRow]);
+    const { error: insertError } = await admin.from("test_data").insert([
+      {
+        user_id: userId,
+        project_id: projectId,
+        data_type: dataType,
+        data: nextRuns,
+        updated_at: now,
+      },
+    ]);
 
     if (insertError) {
+      console.error("Ingest: failed to create runs", insertError);
       return NextResponse.json(
-        { error: "Failed to create runs.", details: insertError.message },
+        { error: "Failed to create runs." },
         { status: 502 },
       );
     }
@@ -155,21 +159,4 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     },
     { status: 201 },
   );
-}
-
-async function resolveUserId(
-  admin: ReturnType<typeof supabaseAdmin>,
-  projectId: string,
-): Promise<string | null> {
-  const override = process.env.INGEST_USER_ID;
-  if (override) return override;
-
-  const { data } = await admin
-    .from("test_data")
-    .select("user_id")
-    .like("data_type", `${projectId}_%`)
-    .limit(1)
-    .maybeSingle();
-
-  return (data?.user_id as string | undefined) ?? null;
 }

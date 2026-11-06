@@ -73,7 +73,7 @@ export default function DefectTracker() {
       );
     } else {
       const newDefect: Defect = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         projectId,
         ...formData,
         createdAt: new Date(),

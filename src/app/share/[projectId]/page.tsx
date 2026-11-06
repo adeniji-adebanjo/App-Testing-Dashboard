@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Card,
@@ -25,7 +25,7 @@ import {
   Shield,
   Globe,
 } from "lucide-react";
-import { getProject, getProjectStats } from "@/lib/projectStorage";
+import { fetchSharedProject } from "@/lib/shareLinks";
 import { Project, ProjectStats } from "@/types/project";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -33,6 +33,7 @@ import Link from "next/link";
 export default function PrivateShareSummaryPage() {
   const { projectId } = useParams();
   const id = projectId as string;
+  const token = useSearchParams().get("t");
 
   const [project, setProject] = useState<Project | null>(null);
   const [stats, setStats] = useState<ProjectStats | null>(null);
@@ -42,17 +43,16 @@ export default function PrivateShareSummaryPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Fetch specific project directly - works for guests
-        const foundProject = await getProject(id);
+        // Token-checked server read - works for guests without an account
+        const snapshot = await fetchSharedProject(id, token);
 
-        if (!foundProject) {
+        if (!snapshot) {
           setError("Project not found or private link expired");
           return;
         }
 
-        setProject(foundProject);
-        const projectStats = await getProjectStats(id);
-        setStats(projectStats);
+        setProject(snapshot.project);
+        setStats(snapshot.stats);
       } catch (err) {
         setError("Failed to load project data");
         console.error(err);
@@ -62,7 +62,7 @@ export default function PrivateShareSummaryPage() {
     };
 
     loadData();
-  }, [id]);
+  }, [id, token]);
 
   if (isLoading) {
     return (
@@ -281,7 +281,9 @@ export default function PrivateShareSummaryPage() {
             size="lg"
             className="w-full sm:w-auto gap-3 py-6 shadow-lg shadow-primary/20 hover:shadow-xl transition-all font-black uppercase tracking-wider"
           >
-            <Link href={`/share/${id}/analysis`}>
+            <Link
+              href={`/share/${id}/analysis?t=${encodeURIComponent(token ?? "")}`}
+            >
               <FileText size={18} />
               View Detailed Analysis
             </Link>

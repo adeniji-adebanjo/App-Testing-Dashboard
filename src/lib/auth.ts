@@ -152,3 +152,14 @@ export const demoSignIn = (email: string): AuthUser => {
 
   return user;
 };
+
+/**
+ * Authorization header carrying the current Supabase access token, for calls
+ * to API routes that verify the session server-side (see lib/apiAuth.ts).
+ */
+export const getAuthHeaders = async (): Promise<Record<string, string>> => {
+  if (!isSupabaseEnabled()) return {};
+  const { data } = await supabase!.auth.getSession();
+  const token = data.session?.access_token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};

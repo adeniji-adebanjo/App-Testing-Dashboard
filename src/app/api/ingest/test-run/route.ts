@@ -3,8 +3,11 @@ import {
   readProjectData,
   writeProjectData,
   isServerStoreEnabled,
+  projectExists,
   SERVER_KEYS,
 } from "@/lib/serverStore";
+import { requireApiToken } from "@/lib/apiAuth";
+import { MAX_RESULTS, MAX_STORED_RUNS } from "@/lib/ingest";
 import {
   TestRun,
   TestRunResult,
@@ -35,16 +38,8 @@ interface IncomingResult {
 }
 
 export async function POST(request: NextRequest) {
-  const token = process.env.INGEST_API_TOKEN;
-  if (!token) {
-    return NextResponse.json(
-      { error: "Ingestion disabled: INGEST_API_TOKEN not configured" },
-      { status: 503 },
-    );
-  }
-  if (request.headers.get("x-api-token") !== token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = requireApiToken(request, process.env.INGEST_API_TOKEN);
+  if (denied) return denied;
   if (!isServerStoreEnabled()) {
     return NextResponse.json(
       { error: "Server store not configured" },
@@ -66,11 +61,24 @@ export async function POST(request: NextRequest) {
   }
 
   const { projectId, name, results } = body;
-  if (!projectId || !Array.isArray(results) || results.length === 0) {
+  if (
+    typeof projectId !== "string" ||
+    !Array.isArray(results) ||
+    results.length === 0
+  ) {
     return NextResponse.json(
       { error: "projectId and a non-empty results array are required" },
       { status: 400 },
     );
+  }
+  if (results.length > MAX_RESULTS) {
+    return NextResponse.json(
+      { error: `results must contain at most ${MAX_RESULTS} entries` },
+      { status: 400 },
+    );
+  }
+  if (!(await projectExists(projectId))) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
   const type: TestRunType = VALID_TYPE.includes(body.type as TestRunType)
@@ -83,10 +91,10 @@ export async function POST(request: NextRequest) {
     : "staging";
 
   const runResults: TestRunResult[] = results.map((r, i) => ({
-    caseKey: r.caseKey || r.testCaseId || `case-${i}`,
-    testCaseId: r.testCaseId || `TC-${i + 1}`,
-    module: r.module || "Automation",
-    scenario: r.scenario || r.testCaseId || `Case ${i + 1}`,
+    caseKey: text(r.caseKey) || text(r.testCaseId) || `case-${i}`,
+    testCaseId: text(r.testCaseId) || `TC-${i + 1}`,
+    module: text(r.module) || "Automation",
+    scenario: text(r.scenario) || text(r.testCaseId) || `Case ${i + 1}`,
     status: VALID_STATUS.includes(r.status as TestStatus)
       ? (r.status as TestStatus)
       : "pending",
@@ -97,7 +105,7 @@ export async function POST(request: NextRequest) {
   const run: TestRun = {
     id: crypto.randomUUID(),
     projectId,
-    name: name || `CI ${type} run`,
+    name: text(name) || `CI ${type} run`,
     type,
     environment,
     status: "completed",
@@ -113,10 +121,11 @@ export async function POST(request: NextRequest) {
       SERVER_KEYS.TEST_RUNS,
       [],
     );
-    const write = await writeProjectData(projectId, SERVER_KEYS.TEST_RUNS, [
-      run,
-      ...existing,
-    ]);
+    const write = await writeProjectData(
+      projectId,
+      SERVER_KEYS.TEST_RUNS,
+      [run, ...existing].slice(0, MAX_STORED_RUNS),
+    );
     if (!write.ok) {
       return NextResponse.json(
         { error: write.error || "Failed to persist run" },
@@ -153,9 +162,12 @@ export async function POST(request: NextRequest) {
       failed: stats.failed,
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Ingestion failed", details: String(error) },
-      { status: 500 },
-    );
+    console.error("Ingestion failed", error);
+    return NextResponse.json({ error: "Ingestion failed" }, { status: 500 });
   }
+}
+
+// Coerce untrusted input to a bounded string ("" when absent or not a string).
+function text(value: unknown): string {
+  return typeof value === "string" ? value.slice(0, 2000) : "";
 }
